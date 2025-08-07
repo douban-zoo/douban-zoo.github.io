@@ -12,9 +12,16 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.0.0",
     "@tsconfig/svelte": "^5.0.4",
+    "@types/three": "^0.179.0",
     "svelte": "^5.35.5",
     "svelte-check": "^4.2.2",
     "typescript": "~5.8.3",
     "vite": "^7.0.4"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.11",
+    "gsap": "^3.13.0",
+    "tailwindcss": "^4.1.11",
+    "three": "^0.179.1"
   }
 }
