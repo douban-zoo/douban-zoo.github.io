@@ -256,11 +256,21 @@
       ease: 'power2.out',
     });
 
+    const targetRotation = isForwardFlip
+      ? -Math.PI + pageIndex * rStep
+      : isBackwardFlip
+        ? pageIndex * rStep
+        : deltaX < 0
+          ? pageIndex * rStep
+          : -Math.PI + pageIndex * rStep;
+
     pairs.forEach((pair) => {
+      const offset = (targetRotation - pageIndex * rStep) * config.pageWidth * pair.parallaxFactor;
+
       tl.to(
         pair.front.position,
         {
-          x: config.pageWidth / 2 + pair.offset.x,
+          x: config.pageWidth / 2 + pair.offset.x + offset,
           duration: config.animationDuration,
           ease: 'power2.out',
         },
@@ -269,13 +279,14 @@
       tl.to(
         pair.back.position,
         {
-          x: -config.pageWidth / 2 - pair.offset.x,
+          x: -config.pageWidth / 2 - pair.offset.x - offset,
           duration: config.animationDuration,
           ease: 'power2.out',
         },
         '<',
       );
     });
+
 
     isFlipping = isForwardFlip || isBackwardFlip;
   }
