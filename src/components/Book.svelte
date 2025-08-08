@@ -14,8 +14,8 @@
     numPages: 6,
     pageWidth: 2,
     pageHeight: 3,
-    pageDepth: 0.025,
-    rotationStep: 0.02,
+    pageDepth: 0.02,
+    rotationStep: 0.03,
     animationDuration: 1,
   };
 
@@ -36,9 +36,9 @@
       ],
       [{texture: '/imgs/dec1.png', parallaxFactor: 0.4, offset: {x: 0.1, y: 0, z: 0.015}}],
       [
-        {texture: '/imgs/dec2.png', parallaxFactor: -0.2, offset: {x: -1.4, y: 0.2, z: 0.015}},
+        {texture: '/imgs/dec2.png', parallaxFactor: -0.2, offset: {x: -1.0, y: 0.2, z: 0.015}},
         {texture: '/imgs/zoo.png', parallaxFactor: 0.6, offset: {x: 0.9, y: -0.4, z: 0.02}},
-        {texture: '/imgs/flower.png', parallaxFactor: 0.4, offset: {x: 0.3, y: 0, z: 0.015}},
+        {texture: '/imgs/flower.png', parallaxFactor: 0.4, offset: {x: 0.3, y: 0, z: 0.025}},
       ],
       [{texture: '/imgs/dec1.png', parallaxFactor: 0.3, offset: {x: 0.2, y: 0.1, z: 0.015}}],
       [],
@@ -92,7 +92,7 @@
           clippingPlanes: clipPlanes,
         }),
       );
-      front.position.set(decConfig.offset.x, decConfig.offset.y || 0, z + decConfig.offset.z);
+      front.position.set(-config.pageWidth, decConfig.offset.y || 0, z + decConfig.offset.z);
 
       const back = new THREE.Mesh(
         geometry.clone(),
@@ -104,7 +104,7 @@
         }),
       );
 
-      back.position.set(-decConfig.offset.x, decConfig.offset.y || 0, z - decConfig.offset.z);
+      back.position.set(config.pageWidth, decConfig.offset.y || 0, z - decConfig.offset.z);
       back.rotation.y = Math.PI;
 
       pairs.push({front, back, parallaxFactor: decConfig.parallaxFactor, offset: decConfig.offset});
@@ -325,10 +325,11 @@
 
 <div
   bind:this={container}
-  class="w-full h-full"
+  class="w-full h-full cursor-grab"
   on:pointerdown={onPointerDown}
   on:pointermove={onPointerMove}
   on:pointerup={onPointerUp}
+  on:pointerleave={onPointerUp}
 />
 
 <style>
