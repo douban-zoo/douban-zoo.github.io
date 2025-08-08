@@ -4,157 +4,213 @@
   import { gsap } from 'gsap';
 
   let container: HTMLDivElement;
-  let material: THREE.ShaderMaterial;
-  let renderer: THREE.WebGLRenderer;
+  let currentPage = 0;
+  let isFlipping = false;
+  const numPages = 6;
+  const pages: THREE.Group[] = [];
 
+  const pageWidth = 2;
+  const pageHeight = 3;
+  const pageDepth = 0.01;
+  const gap = 0.02;
+
+  let startX = 0;
+  let deltaX = 0;
   let isDragging = false;
-  let targetAngle = 0;
-  let tween: gsap.core.Tween | null = null;
-  let lastX = 0;
+
+  const baseRotation = (i: number) => i * 0.02;
 
   onMount(() => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-    camera.position.z = 3;
+    camera.position.set(0, 0, 5);
+    camera.lookAt(0, 0, 0);
 
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
-    const geometry = new THREE.PlaneGeometry(2, 2, 100, 1);
-    const texture = new THREE.TextureLoader().load('/imgs/meidi1.png');
+    const textureLoader = new THREE.TextureLoader();
+    const textures = [
+      textureLoader.load('/imgs/meidi1.png'),
+      textureLoader.load('/imgs/meidi2.png'),
+      textureLoader.load('/imgs/meidi3.png'),
+      textureLoader.load('/imgs/meidi4.png'),
+      textureLoader.load('/imgs/flower.png'),
+      textureLoader.load('/imgs/zoo.png'),
+    ];
 
-    material = new THREE.ShaderMaterial({
-      uniforms: {
-        uTexture: { value: texture },
-        uAngle: { value: 0.0 },
-      },
-      vertexShader: `
-        uniform float uAngle;
-        varying vec2 vUv;
+    const sideMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-        void main() {
-          vec3 pos = position;
-          vUv = uv;
+    for (let i = 0; i < numPages; i++) {
+      const pivot = new THREE.Group();
+      const pageGeometry = new THREE.BoxGeometry(pageWidth, pageHeight, pageDepth);
 
-          bool flipLeft = uAngle < 0.0;
-          bool flipRight = uAngle >= 0.0;
+      const frontMaterial = new THREE.MeshBasicMaterial({ map: textures[i] });
+      const backMaterial = new THREE.MeshBasicMaterial({
+        map: textures[(i + 2) % numPages],
+        transparent: true,
+      });
 
-          if ((flipLeft && pos.x < 0.0) || (flipRight && pos.x > 0.0)) {
-            float c = cos(uAngle);
-            float s = sin(uAngle);
-            float x = pos.x;
-            float z = pos.z;
+      const materials = [
+        sideMaterial, sideMaterial,
+        sideMaterial, sideMaterial,
+        frontMaterial, backMaterial,
+      ];
 
-            pos.x = c * x - s * z;
-            pos.z = s * x + c * z;
-          }
+      const pageMesh = new THREE.Mesh(pageGeometry, materials);
+      pageMesh.position.x = pageWidth / 2;
+      pivot.add(pageMesh);
 
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform sampler2D uTexture;
-        varying vec2 vUv;
-
-        void main() {
-          gl_FragColor = texture2D(uTexture, vUv);
-        }
-      `,
-      side: THREE.DoubleSide,
-    });
-
-    const plane = new THREE.Mesh(geometry, material);
-    scene.add(plane);
-
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    const handlePointerDown = (e: PointerEvent) => {
-      const rect = container.getBoundingClientRect();
-      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObject(plane);
-
-      if (intersects.length > 0) {
-        isDragging = true;
-        lastX = e.clientX;
-        if (tween) tween.kill();
-      }
-    };
-
-    const handlePointerMove = (e: PointerEvent) => {
-      if (!isDragging) return;
-
-      const deltaX = e.clientX - lastX;
-      lastX = e.clientX;
-
-      const sensitivity = 0.0025;
-      targetAngle -= deltaX * sensitivity;
-      targetAngle = THREE.MathUtils.clamp(targetAngle, -Math.PI, Math.PI);
-
-      material.uniforms.uAngle.value = targetAngle;
-    };
-
-    const handlePointerUp = () => {
-  if (!isDragging) return;
-  isDragging = false;
-
-  const threshold = Math.PI / 2; // 90度阈值判断是否回0或翻到底
-  let final = 0;
-
-  if (Math.abs(targetAngle) > threshold) {
-    final = targetAngle < 0 ? -Math.PI : Math.PI; // 翻到底
-  } else {
-    final = 0; // 回正面
-  }
-
-  tween = gsap.to(material.uniforms.uAngle, {
-    value: final,
-    duration: 1,
-    ease: 'power2.out',
-    onUpdate: () => {
-      targetAngle = material.uniforms.uAngle.value;
+      pivot.position.set(i * (pageDepth + gap), 0, -i * 0.001);
+      pivot.rotation.y = baseRotation(i);
+      scene.add(pivot);
+      pages.push(pivot);
     }
-  });
-};
 
-    const handleResize = () => {
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    const onWindowResize = () => {
       camera.aspect = container.clientWidth / container.clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(container.clientWidth, container.clientHeight);
     };
-    window.addEventListener('resize', handleResize);
-
-    container.addEventListener('pointerdown', handlePointerDown);
-    container.addEventListener('pointermove', handlePointerMove);
-    container.addEventListener('pointerup', handlePointerUp);
-    // container.addEventListener('pointerleave', handlePointerUp); // 额外处理离开事件
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    };
-    animate();
+    window.addEventListener('resize', onWindowResize);
 
     return () => {
-      container.removeEventListener('pointerdown', handlePointerDown);
-      container.removeEventListener('pointermove', handlePointerMove);
-      container.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', onWindowResize);
+      container.removeChild(renderer.domElement);
     };
   });
+
+  function onPointerDown(event: PointerEvent) {
+    if (isFlipping || currentPage >= numPages) return;
+    isDragging = true;
+    startX = event.clientX;
+    deltaX = 0;
+  }
+
+  function onPointerMove(event: PointerEvent) {
+  if (!isDragging) return;
+  deltaX = event.clientX - startX;
+
+  const normalized = deltaX * 0.001;
+  const clamped = Math.max(-1, Math.min(1, normalized));
+
+  if (clamped < 0 && currentPage < numPages) {
+    pages[currentPage].rotation.y = baseRotation(currentPage) + clamped * Math.PI;
+  } else if (clamped > 0 && currentPage > 0) {
+    pages[currentPage - 1].rotation.y = baseRotation(currentPage - 1) - (1 - clamped) * Math.PI;
+  }
+}
+
+function onPointerUp() {
+  if (!isDragging || isFlipping) return;
+  isDragging = false;
+
+  const threshold = Math.PI / 2;
+
+  if (deltaX < 0 && currentPage < numPages) {
+    const page = pages[currentPage];
+    const angle = page.rotation.y - baseRotation(currentPage);
+    if (angle < -threshold) {
+      isFlipping = true;
+      gsap.to(page.rotation, {
+        y: -Math.PI + baseRotation(currentPage),
+        duration: 0.5,
+        ease: 'power2.out',
+        onComplete: () => {
+          currentPage++;
+          isFlipping = false;
+        },
+      });
+    } else {
+      gsap.to(page.rotation, {
+        y: baseRotation(currentPage),
+        duration: 0.5,
+        ease: 'power2.out',
+      });
+    }
+
+  } else if (deltaX > 0 && currentPage > 0) {
+    const page = pages[currentPage - 1];
+    const angle = page.rotation.y - baseRotation(currentPage - 1);
+    if (angle > -threshold) {
+      isFlipping = true;
+      gsap.to(page.rotation, {
+        y: baseRotation(currentPage - 1),
+        duration: 0.5,
+        ease: 'power2.out',
+        onComplete: () => {
+          currentPage--;
+          isFlipping = false;
+        },
+      });
+    } else {
+      gsap.to(page.rotation, {
+        y: -Math.PI + baseRotation(currentPage - 1),
+        duration: 0.5,
+        ease: 'power2.out',
+      });
+    }
+  }
+}
+
 </script>
 
+<div
+  bind:this={container}
+  class="w-full h-full"
+  on:pointerdown={onPointerDown}
+  on:pointermove={onPointerMove}
+  on:pointerup={onPointerUp}
+/>
+
+<div class="absolute bottom-4 left-4 space-x-4">
+  <button
+    on:click={() => {
+      if (currentPage === 0 || isFlipping) return;
+      currentPage--;
+      gsap.to(pages[currentPage].rotation, {
+        y: baseRotation(currentPage),
+        duration: 1,
+        ease: 'power2.inOut',
+      });
+    }}
+    disabled={currentPage === 0}
+    class="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+  >
+    Previous
+  </button>
+  <button
+    on:click={() => {
+      if (currentPage >= numPages || isFlipping) return;
+      isFlipping = true;
+      gsap.to(pages[currentPage].rotation, {
+        y: -Math.PI + baseRotation(currentPage),
+        duration: 1,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          currentPage++;
+          isFlipping = false;
+        },
+      });
+    }}
+    disabled={currentPage === numPages}
+    class="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+  >
+    Next
+  </button>
+</div>
+
 <style>
-  .canvas-container {
-    width: 100vw;
+  .w-full {
+    width: 100%;
     height: 100vh;
-    overflow: hidden;
-    touch-action: none;
+    touch-action: none; /* Prevent default scroll on touch */
   }
 </style>
-
-<div bind:this={container} class="canvas-container"></div>
