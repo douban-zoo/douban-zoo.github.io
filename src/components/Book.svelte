@@ -74,16 +74,31 @@
       pivot.add(pageMesh);
 
       if (i > 0 && i < numPages - 1) {
+        const clippingPlanes = [
+          new THREE.Plane(new THREE.Vector3(-1, 0, 0), pageWidth / 2),
+          new THREE.Plane(new THREE.Vector3(1, 0, 0), pageWidth / 2), 
+          new THREE.Plane(new THREE.Vector3(0, -1, 0), pageHeight / 2),
+          new THREE.Plane(new THREE.Vector3(0, 1, 0), pageHeight / 2), 
+        ];
+
         const decorationGeometry = new THREE.PlaneGeometry(pageWidth * 0.3, pageHeight * 0.3);
         const decorationMaterial = new THREE.MeshBasicMaterial({
           map: decorations[i % decorations.length],
           transparent: true,
           side: THREE.DoubleSide,
+          clippingPlanes: clippingPlanes,
         });
         const decorationMesh = new THREE.Mesh(decorationGeometry, decorationMaterial);
-        decorationMesh.position.set(pageWidth / 2, 0, pageDepth / 2 + 0.01); 
+        decorationMesh.position.set(pageWidth / 2, 0, pageMesh.position.z + 0.015);
         pivot.add(decorationMesh);
         decorationMeshes[i] = decorationMesh;
+
+        decorationMaterial.clippingPlanes = clippingPlanes.map(plane => {
+          const localPlane = plane.clone();
+          localPlane.constant += pageWidth / 2;
+          return localPlane;
+        });
+        renderer.localClippingEnabled = true;
       }
 
       pivot.rotation.y = baseRotation(i);
@@ -127,123 +142,122 @@
     if (clamped < 0 && currentPage < numPages) {
       pages[currentPage].rotation.y = baseRotation(currentPage) + clamped * Math.PI;
       if (currentPage > 0 && currentPage < numPages - 1 && decorationMeshes[currentPage]) {
-        const parallaxFactor = 0.5;
-        decorationMeshes[currentPage].position.x = pageWidth / 2 + clamped * pageWidth * parallaxFactor;
+        const parallaxFactor = 0.03;
+        decorationMeshes[currentPage].position.x += clamped * pageWidth * parallaxFactor;
       }
     } else if (clamped > 0 && currentPage > 0) {
       pages[currentPage - 1].rotation.y = baseRotation(currentPage - 1) - (1 - clamped) * Math.PI;
       if (currentPage - 1 > 0 && currentPage - 1 < numPages - 1 && decorationMeshes[currentPage - 1]) {
-        const parallaxFactor = 0.5;
-        decorationMeshes[currentPage - 1].position.x = pageWidth / 2 - (1 - clamped) * pageWidth * parallaxFactor;
+        const parallaxFactor = 0.03;
+        decorationMeshes[currentPage - 1].position.x -= (1 - clamped) * pageWidth * parallaxFactor;
       }
     }
   }
 
   function onPointerUp() {
-  if (!isDragging || isFlipping) return;
-  isDragging = false;
+    if (!isDragging || isFlipping) return;
+    isDragging = false;
 
-  const threshold = Math.PI / 2;
+    const threshold = Math.PI / 2;
 
-  if (deltaX < 0 && currentPage < numPages) {
-    const page = pages[currentPage];
-    const angle = page.rotation.y - baseRotation(currentPage);
-    const decoration = decorationMeshes[currentPage];
+    if (deltaX < 0 && currentPage < numPages) {
+      const page = pages[currentPage];
+      const angle = page.rotation.y - baseRotation(currentPage);
+      const decoration = decorationMeshes[currentPage];
 
-    if (angle < -threshold) {
-      isFlipping = true;
-      const tl = gsap.timeline({
-        onComplete: () => {
-          currentPage++;
-          isFlipping = false;
-        },
-      });
-      tl.to(page.rotation, {
-        y: -Math.PI + baseRotation(currentPage),
-        duration: 0.5,
-        ease: 'power2.out',
-      });
-      if (decoration) {
-        tl.to(
-          decoration.position,
-          {
-            x: pageWidth / 2,
-            duration: 0.5,
-            ease: 'power2.out',
+      if (angle < -threshold) {
+        isFlipping = true;
+        const tl = gsap.timeline({
+          onComplete: () => {
+            currentPage++;
+            isFlipping = false;
           },
-          '<' // 与前一个动画同时开始
-        );
+        });
+        tl.to(page.rotation, {
+          y: -Math.PI + baseRotation(currentPage),
+          duration: 0.5,
+          ease: 'power2.out',
+        });
+        if (decoration) {
+          tl.to(
+            decoration.position,
+            {
+              x: pageWidth / 2,
+              duration: 0.5,
+              ease: 'power2.out',
+            },
+            '<'
+          );
+        }
+      } else {
+        const tl = gsap.timeline();
+        tl.to(page.rotation, {
+          y: baseRotation(currentPage),
+          duration: 0.5,
+          ease: 'power2.out',
+        });
+        if (decoration) {
+          tl.to(
+            decoration.position,
+            {
+              x: pageWidth / 2,
+              duration: 0.5,
+              ease: 'power2.out',
+            },
+            '<'
+          );
+        }
       }
-    } else {
-      const tl = gsap.timeline();
-      tl.to(page.rotation, {
-        y: baseRotation(currentPage),
-        duration: 0.5,
-        ease: 'power2.out',
-      });
-      if (decoration) {
-        tl.to(
-          decoration.position,
-          {
-            x: pageWidth / 2,
-            duration: 0.5,
-            ease: 'power2.out',
-          },
-          '<'
-        );
-      }
-    }
-  } else if (deltaX > 0 && currentPage > 0) {
-    const page = pages[currentPage - 1];
-    const angle = page.rotation.y - baseRotation(currentPage - 1);
-    const decoration = decorationMeshes[currentPage - 1];
+    } else if (deltaX > 0 && currentPage > 0) {
+      const page = pages[currentPage - 1];
+      const angle = page.rotation.y - baseRotation(currentPage - 1);
+      const decoration = decorationMeshes[currentPage - 1];
 
-    if (angle > -threshold) {
-      isFlipping = true;
-      const tl = gsap.timeline({
-        onComplete: () => {
-          currentPage--;
-          isFlipping = false;
-        },
-      });
-      tl.to(page.rotation, {
-        y: baseRotation(currentPage - 1),
-        duration: 0.5,
-        ease: 'power2.out',
-      });
-      if (decoration) {
-        tl.to(
-          decoration.position,
-          {
-            x: pageWidth / 2,
-            duration: 0.5,
-            ease: 'power2.out',
+      if (angle > -threshold) {
+        isFlipping = true;
+        const tl = gsap.timeline({
+          onComplete: () => {
+            currentPage--;
+            isFlipping = false;
           },
-          '<'
-        );
-      }
-    } else {
-      const tl = gsap.timeline();
-      tl.to(page.rotation, {
-        y: -Math.PI + baseRotation(currentPage - 1),
-        duration: 0.5,
-        ease: 'power2.out',
-      });
-      if (decoration) {
-        tl.to(
-          decoration.position,
-          {
-            x: pageWidth / 2,
-            duration: 0.5,
-            ease: 'power2.out',
-          },
-          '<'
-        );
+        });
+        tl.to(page.rotation, {
+          y: baseRotation(currentPage - 1),
+          duration: 0.5,
+          ease: 'power2.out',
+        });
+        if (decoration) {
+          tl.to(
+            decoration.position,
+            {
+              x: pageWidth / 2,
+              duration: 0.5,
+              ease: 'power2.out',
+            },
+            '<'
+          );
+        }
+      } else {
+        const tl = gsap.timeline();
+        tl.to(page.rotation, {
+          y: -Math.PI + baseRotation(currentPage - 1),
+          duration: 0.5,
+          ease: 'power2.out',
+        });
+        if (decoration) {
+          tl.to(
+            decoration.position,
+            {
+              x: pageWidth / 2,
+              duration: 0.5,
+              ease: 'power2.out',
+            },
+            '<'
+          );
+        }
       }
     }
   }
-}
-
 </script>
 
 <div
@@ -253,7 +267,6 @@
   on:pointermove={onPointerMove}
   on:pointerup={onPointerUp}
 />
-
 
 <style>
   .w-full {
