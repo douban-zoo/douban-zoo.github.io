@@ -10,13 +10,19 @@
   let startX = 0;
   let deltaX = 0;
 
+  let lastMoveTime = 0;
+  let lastMoveX = 0;
+  let velocity = 0;
+
   const config = {
     numPages: 6,
     pageWidth: 2,
     pageHeight: 3,
     pageDepth: 0.02,
-    rotationStep: 0.03,
-    animationDuration: 1,
+    rotationStep: 0.02,
+    animationDuration: 1.6,
+    sensitivity: 0.0006,
+    velocityThreshold: 0.5,
   };
 
   const textures = {
@@ -163,11 +169,15 @@
     container.appendChild(renderer.domElement);
 
     const textureLoader = new THREE.TextureLoader();
-    for (let i = 0; i < config.numPages; i++) {
-      const page = createPage(i, textureLoader);
-      scene.add(page);
-      pages.push(page);
-    }
+    const loadPromises = textures.pages.map((url) => new Promise((resolve) => textureLoader.load(url, resolve)));
+    Promise.all(loadPromises).then(() => {
+      for (let i = 0; i < config.numPages; i++) {
+        const page = createPage(i, textureLoader);
+        scene.add(page);
+        pages.push(page);
+      }
+      animate();
+    });
   }
 
   function animate() {
@@ -179,6 +189,7 @@
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   }
 
   onMount(() => {
@@ -193,15 +204,30 @@
   });
 
   function onPointerDown(event: PointerEvent) {
-    if (isFlipping || currentPage >= config.numPages) return;
+    if (isFlipping) return;
     isDragging = true;
     startX = event.clientX;
     deltaX = 0;
+
+    lastMoveTime = performance.now();
+    lastMoveX = event.clientX;
+    velocity = 0;
   }
+
   function onPointerMove(event: PointerEvent) {
     if (!isDragging) return;
-    deltaX = event.clientX - startX;
-    const normalized = deltaX * 0.001;
+
+    const currentTime = performance.now();
+    const movementX = event.movementX;
+    const timeDelta = currentTime - lastMoveTime;
+
+    if (timeDelta > 0) {
+      velocity = movementX / timeDelta;
+      lastMoveTime = currentTime;
+    }
+
+    deltaX += movementX;
+    const normalized = deltaX * config.sensitivity;
     const clamped = Math.max(-1, Math.min(1, normalized));
 
     const pageIndex = clamped < 0 ? currentPage : currentPage - 1;
@@ -233,6 +259,7 @@
 
   function onPointerUp() {
     if (!isDragging || isFlipping) return;
+    isFlipping = true;
     isDragging = false;
 
     const pageIndex = deltaX < 0 ? currentPage : currentPage - 1;
@@ -242,8 +269,28 @@
     const pairs = decorationPairs[pageIndex] || [];
     const angle = page.rotation.y - pageIndex * config.rotationStep;
 
-    const isForwardFlip = deltaX < 0 && angle < -Math.PI / 2;
-    const isBackwardFlip = deltaX > 0 && angle > -Math.PI / 2;
+    const angleThreshold = -Math.PI / 2;
+    const absVelocity = Math.abs(velocity);
+    const velocityDirection = velocity > 0 ? 1 : -1;
+
+    let isForwardFlip = false;
+    let isBackwardFlip = false;
+
+    if (absVelocity > config.velocityThreshold) {
+      isForwardFlip = velocityDirection < 0 && deltaX < 0;
+      isBackwardFlip = velocityDirection > 0 && deltaX > 0;
+    } else {
+      isForwardFlip = deltaX < 0 && angle < angleThreshold;
+      isBackwardFlip = deltaX > 0 && angle > angleThreshold;
+    }
+
+    if (absVelocity > config.velocityThreshold * 2) {
+      if (velocityDirection < 0 && deltaX < 0 && currentPage < config.numPages - 1) {
+        isForwardFlip = true;
+      } else if (velocityDirection > 0 && deltaX > 0 && currentPage > 0) {
+        isBackwardFlip = true;
+      }
+    }
 
     const tl = gsap.timeline({
       onComplete: () => {
@@ -263,9 +310,11 @@
           ? pageIndex * rStep
           : -Math.PI + pageIndex * rStep;
 
+    const duration = Math.max(1, config.animationDuration - absVelocity * 0.2);
+
     tl.to(page.rotation, {
       y: targetRotation,
-      duration: config.animationDuration,
+      duration: duration,
       ease: 'power2.out',
     });
 
@@ -275,7 +324,7 @@
         pair.front.position,
         {
           x: pair.offset.x + offset,
-          duration: config.animationDuration,
+          duration: duration,
           ease: 'power2.out',
         },
         '<',
@@ -284,7 +333,7 @@
         pair.back.position,
         {
           x: -pair.offset.x - offset,
-          duration: config.animationDuration,
+          duration: duration,
           ease: 'power2.out',
         },
         '<',
@@ -302,7 +351,7 @@
           pair.front.position,
           {
             x: pair.offset.x + offset,
-            duration: config.animationDuration,
+            duration: duration,
             ease: 'power2.out',
           },
           '<',
@@ -311,7 +360,7 @@
           pair.back.position,
           {
             x: -pair.offset.x - offset,
-            duration: config.animationDuration,
+            duration: duration,
             ease: 'power2.out',
           },
           '<',
@@ -319,7 +368,7 @@
       });
     }
 
-    isFlipping = isForwardFlip || isBackwardFlip;
+    velocity = 0;
   }
 </script>
 
@@ -330,6 +379,8 @@
   on:pointermove={onPointerMove}
   on:pointerup={onPointerUp}
   on:pointerleave={onPointerUp}
+  on:pointercancel={onPointerUp}
+  on:lostpointercapture={onPointerUp}
 />
 
 <style>
