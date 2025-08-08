@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import {onMount} from 'svelte';
   import * as THREE from 'three';
-  import { gsap } from 'gsap';
+  import {gsap} from 'gsap';
 
   let container: HTMLDivElement;
   let currentPage = 0;
@@ -30,22 +30,18 @@
     ],
     decorations: [
       [],
-      [ 
-        { texture: '/imgs/zoo.png', parallaxFactor: 0.3, offset: { x: 0.2, y: 0.1, z: 0.015 } },
-        { texture: '/imgs/flower.png', parallaxFactor: 0.5, offset: { x: -0.2, y: -0.1, z: 0.02 } },
+      [
+        {texture: '/imgs/zoo.png', parallaxFactor: 0.3, offset: {x: 1, y: 0.1, z: 0.015}},
+        {texture: '/imgs/flower.png', parallaxFactor: -0.5, offset: {x: -0.2, y: -0.1, z: 0.02}},
       ],
-      [ 
-        { texture: '/imgs/dec1.png', parallaxFactor: 0.4, offset: { x: 0.1, y: 0, z: 0.015 } },
+      [{texture: '/imgs/dec1.png', parallaxFactor: 0.4, offset: {x: 0.1, y: 0, z: 0.015}}],
+      [
+        {texture: '/imgs/dec2.png', parallaxFactor: -0.2, offset: {x: -1.4, y: 0.2, z: 0.015}},
+        {texture: '/imgs/zoo.png', parallaxFactor: 0.6, offset: {x: 0.9, y: -0.4, z: 0.02}},
+        {texture: '/imgs/flower.png', parallaxFactor: 0.4, offset: {x: 0.3, y: 0, z: 0.015}},
       ],
-      [ 
-        { texture: '/imgs/dec2.png', parallaxFactor: -0.2, offset: { x: -1.4, y: 0.2, z: 0.015 } },
-        { texture: '/imgs/zoo.png', parallaxFactor: 0.6, offset: { x: -0.4, y: -0.4, z: 0.02 } },
-        { texture: '/imgs/flower.png', parallaxFactor: 0.4, offset: { x: 0.3, y: 0, z: 0.025 } },
-      ],
-      [ 
-        { texture: '/imgs/dec1.png', parallaxFactor: 0.3, offset: { x: 0.2, y: 0.1, z: 0.015 } },
-      ],
-      [], 
+      [{texture: '/imgs/dec1.png', parallaxFactor: 0.3, offset: {x: 0.2, y: 0.1, z: 0.015}}],
+      [],
     ],
   };
 
@@ -53,11 +49,21 @@
   let camera: THREE.PerspectiveCamera;
   let renderer: THREE.WebGLRenderer;
   const pages: THREE.Group[] = [];
-  const decorationPairs: { front: THREE.Mesh; back: THREE.Mesh; parallaxFactor: number; offset: { x: number; y: number; z: number } }[][] = [];
+  const decorationPairs: {
+    front: THREE.Mesh;
+    back: THREE.Mesh;
+    parallaxFactor: number;
+    offset: {x: number; y: number; z: number};
+  }[][] = [];
 
   function createDecorations(i: number, textureLoader: THREE.TextureLoader, z: number) {
     const decorations = textures.decorations[i] || [];
-    const pairs: { front: THREE.Mesh; back: THREE.Mesh; parallaxFactor: number; offset: { x: number; y: number; z: number } }[] = [];
+    const pairs: {
+      front: THREE.Mesh;
+      back: THREE.Mesh;
+      parallaxFactor: number;
+      offset: {x: number; y: number; z: number};
+    }[] = [];
 
     decorations.forEach((decConfig) => {
       const geometry = new THREE.PlaneGeometry(config.pageWidth * 0.3, config.pageHeight * 0.3);
@@ -86,11 +92,7 @@
           clippingPlanes: clipPlanes,
         }),
       );
-      front.position.set(
-        config.pageWidth / 2 + (decConfig.offset.x || 0),
-        decConfig.offset.y || 0,
-        z + (decConfig.offset.z || 0.015)
-      );
+      front.position.set(decConfig.offset.x, decConfig.offset.y || 0, z + decConfig.offset.z);
 
       const back = new THREE.Mesh(
         geometry.clone(),
@@ -101,14 +103,11 @@
           clippingPlanes: backClipPlanes,
         }),
       );
-      back.position.set(
-        -config.pageWidth / 2 - (decConfig.offset.x || 0),
-        decConfig.offset.y || 0,
-        z - (decConfig.offset.z || 0.015)
-      );
+
+      back.position.set(-decConfig.offset.x, decConfig.offset.y || 0, z - decConfig.offset.z);
       back.rotation.y = Math.PI;
 
-      pairs.push({ front, back, parallaxFactor: decConfig.parallaxFactor, offset: decConfig.offset });
+      pairs.push({front, back, parallaxFactor: decConfig.parallaxFactor, offset: decConfig.offset});
     });
 
     return pairs;
@@ -117,7 +116,7 @@
   function createPage(i: number, textureLoader: THREE.TextureLoader): THREE.Group {
     const pivot = new THREE.Group();
     const geometry = new THREE.BoxGeometry(config.pageWidth, config.pageHeight, config.pageDepth);
-    const sideMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const sideMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
 
     const frontTexture = textureLoader.load(textures.pages[i]).clone();
     frontTexture.repeat.set(0.5, 1);
@@ -131,8 +130,8 @@
       sideMaterial,
       sideMaterial,
       sideMaterial,
-      new THREE.MeshBasicMaterial({ map: frontTexture }),
-      new THREE.MeshBasicMaterial({ map: backTexture }),
+      new THREE.MeshBasicMaterial({map: frontTexture}),
+      new THREE.MeshBasicMaterial({map: backTexture}),
     ];
 
     const pageMesh = new THREE.Mesh(geometry, materials);
@@ -158,7 +157,7 @@
     camera.position.set(0, 0, 6);
     camera.lookAt(0, 0, 0);
 
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.localClippingEnabled = true;
     container.appendChild(renderer.domElement);
@@ -199,7 +198,6 @@
     startX = event.clientX;
     deltaX = 0;
   }
-
   function onPointerMove(event: PointerEvent) {
     if (!isDragging) return;
     deltaX = event.clientX - startX;
@@ -214,11 +212,23 @@
     const rotation = (clamped < 0 ? clamped : clamped - 1) * Math.PI;
 
     page.rotation.y = pageIndex * config.rotationStep + rotation;
+
     pairs.forEach((pair) => {
       const offset = rotation * config.pageWidth * pair.parallaxFactor;
-      pair.front.position.x = config.pageWidth / 2 + pair.offset.x + offset;
-      pair.back.position.x = -config.pageWidth / 2 - pair.offset.x - offset;
+      pair.front.position.x = pair.offset.x + offset;
+      pair.back.position.x = -pair.offset.x - offset;
     });
+
+    const nextPageIndex = pageIndex + 1;
+    if (nextPageIndex < config.numPages) {
+      const nextPairs = decorationPairs[nextPageIndex] || [];
+      const nextRotation = rotation + Math.PI;
+      nextPairs.forEach((pair) => {
+        const offset = nextRotation * config.pageWidth * pair.parallaxFactor;
+        pair.front.position.x = pair.offset.x + offset;
+        pair.back.position.x = -pair.offset.x - offset;
+      });
+    }
   }
 
   function onPointerUp() {
@@ -231,6 +241,7 @@
     const page = pages[pageIndex];
     const pairs = decorationPairs[pageIndex] || [];
     const angle = page.rotation.y - pageIndex * config.rotationStep;
+
     const isForwardFlip = deltaX < 0 && angle < -Math.PI / 2;
     const isBackwardFlip = deltaX > 0 && angle > -Math.PI / 2;
 
@@ -244,18 +255,6 @@
 
     const rStep = config.rotationStep;
 
-    tl.to(page.rotation, {
-      y: isForwardFlip
-        ? -Math.PI + pageIndex * rStep
-        : isBackwardFlip
-          ? pageIndex * rStep
-          : deltaX < 0
-            ? pageIndex * rStep
-            : -Math.PI + pageIndex * rStep,
-      duration: config.animationDuration,
-      ease: 'power2.out',
-    });
-
     const targetRotation = isForwardFlip
       ? -Math.PI + pageIndex * rStep
       : isBackwardFlip
@@ -264,13 +263,18 @@
           ? pageIndex * rStep
           : -Math.PI + pageIndex * rStep;
 
+    tl.to(page.rotation, {
+      y: targetRotation,
+      duration: config.animationDuration,
+      ease: 'power2.out',
+    });
+
     pairs.forEach((pair) => {
       const offset = (targetRotation - pageIndex * rStep) * config.pageWidth * pair.parallaxFactor;
-
       tl.to(
         pair.front.position,
         {
-          x: config.pageWidth / 2 + pair.offset.x + offset,
+          x: pair.offset.x + offset,
           duration: config.animationDuration,
           ease: 'power2.out',
         },
@@ -279,7 +283,7 @@
       tl.to(
         pair.back.position,
         {
-          x: -config.pageWidth / 2 - pair.offset.x - offset,
+          x: -pair.offset.x - offset,
           duration: config.animationDuration,
           ease: 'power2.out',
         },
@@ -287,6 +291,33 @@
       );
     });
 
+    const nextPageIndex = pageIndex + 1;
+    if (nextPageIndex < config.numPages) {
+      const nextPairs = decorationPairs[nextPageIndex] || [];
+      const nextTargetRotation = targetRotation + Math.PI;
+
+      nextPairs.forEach((pair) => {
+        const offset = (nextTargetRotation - nextPageIndex * rStep) * config.pageWidth * pair.parallaxFactor;
+        tl.to(
+          pair.front.position,
+          {
+            x: pair.offset.x + offset,
+            duration: config.animationDuration,
+            ease: 'power2.out',
+          },
+          '<',
+        );
+        tl.to(
+          pair.back.position,
+          {
+            x: -pair.offset.x - offset,
+            duration: config.animationDuration,
+            ease: 'power2.out',
+          },
+          '<',
+        );
+      });
+    }
 
     isFlipping = isForwardFlip || isBackwardFlip;
   }
