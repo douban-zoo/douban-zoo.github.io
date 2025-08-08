@@ -6,140 +6,159 @@
   let container: HTMLDivElement;
   let currentPage = 0;
   let isFlipping = false;
-  const numPages = 6;
+  let isDragging = false;
+  let startX = 0;
+  let deltaX = 0;
+
+  const config = {
+    numPages: 6,
+    pageWidth: 2,
+    pageHeight: 3,
+    pageDepth: 0.02,
+    rotationStep: 0.02,
+    parallaxFactor: 0.3,
+    animationDuration: 1,
+  };
+
+  const textures = {
+    pages: [
+      '/imgs/meidi1.png',
+      '/imgs/meidi2.png',
+      '/imgs/meidi3.png',
+      '/imgs/meidi4.png',
+      '/imgs/meidi5.png',
+      '/imgs/meidi6.png',
+    ],
+    decorations: ['/imgs/zoo.png', '/imgs/flower.png', '/imgs/dec1.png', '/imgs/dec2.png'],
+  };
+
+  let scene: THREE.Scene;
+  let camera: THREE.PerspectiveCamera;
+  let renderer: THREE.WebGLRenderer;
   const pages: THREE.Group[] = [];
   const decorationPairs: {front: THREE.Mesh; back: THREE.Mesh}[] = [];
 
-  const pageWidth = 2;
-  const pageHeight = 3;
-  const pageDepth = 0.02;
-
-  let startX = 0;
-  let deltaX = 0;
-  let isDragging = false;
-
-  const baseRotation = (i: number) => i * 0.02;
-
-  onMount(() => {
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xffffff);
-
-    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-    camera.position.set(0, 0, 5);
-    camera.lookAt(0, 0, 0);
-
-    const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    container.appendChild(renderer.domElement);
-    renderer.localClippingEnabled = true;
-
-    const textureLoader = new THREE.TextureLoader();
-    const textures = [
-      textureLoader.load('/imgs/meidi1.png'),
-      textureLoader.load('/imgs/meidi2.png'),
-      textureLoader.load('/imgs/meidi3.png'),
-      textureLoader.load('/imgs/meidi4.png'),
-      textureLoader.load('/imgs/meidi5.png'),
-      textureLoader.load('/imgs/meidi6.png'),
-    ];
-
-    const decorations = [
-      textureLoader.load('/imgs/zoo.png'),
-      textureLoader.load('/imgs/flower.png'),
-      textureLoader.load('/imgs/dec1.png'),
-      textureLoader.load('/imgs/dec2.png'),
-    ];
-
+  function createPage(i: number, textureLoader: THREE.TextureLoader): THREE.Group {
+    const pivot = new THREE.Group();
+    const geometry = new THREE.BoxGeometry(config.pageWidth, config.pageHeight, config.pageDepth);
     const sideMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
 
-    for (let i = 0; i < numPages; i++) {
-      const pivot = new THREE.Group();
-      const pageGeometry = new THREE.BoxGeometry(pageWidth, pageHeight, pageDepth);
-      const frontTexture = textures[i].clone();
-      frontTexture.repeat.set(0.5, 1);
-      frontTexture.offset.set(0.5, 0);
+    const frontTexture = textureLoader.load(textures.pages[i]).clone();
+    frontTexture.repeat.set(0.5, 1);
+    frontTexture.offset.set(0.5, 0);
 
-      const backTexture = textures[(i + 1) % numPages].clone();
-      backTexture.repeat.set(0.5, 1);
-      backTexture.offset.set(0.0, 0);
+    const backTexture = textureLoader.load(textures.pages[(i + 1) % config.numPages]).clone();
+    backTexture.repeat.set(0.5, 1);
 
-      const frontMaterial = new THREE.MeshBasicMaterial({map: frontTexture, side: THREE.DoubleSide});
-      const backMaterial = new THREE.MeshBasicMaterial({map: backTexture, side: THREE.DoubleSide});
-      const materials = [sideMaterial, sideMaterial, sideMaterial, sideMaterial, frontMaterial, backMaterial];
+    const materials = [
+      sideMaterial,
+      sideMaterial,
+      sideMaterial,
+      sideMaterial,
+      new THREE.MeshBasicMaterial({map: frontTexture}),
+      new THREE.MeshBasicMaterial({map: backTexture}),
+    ];
 
-      const pageMesh = new THREE.Mesh(pageGeometry, materials);
-      pageMesh.position.x = pageWidth / 2;
-      pivot.add(pageMesh);
+    const pageMesh = new THREE.Mesh(geometry, materials);
+    pageMesh.position.x = config.pageWidth / 2;
+    pivot.add(pageMesh);
 
-      if (i > 0 && i < numPages - 1) {
-        const decorationGeometry = new THREE.PlaneGeometry(pageWidth * 0.3, pageHeight * 0.3);
-        const texture = decorations[i % decorations.length];
-
-        const clipPlanes = [
-          new THREE.Plane(new THREE.Vector3(-1, 0, 0), pageWidth),
-          new THREE.Plane(new THREE.Vector3(1, 0, 0), 0),
-          new THREE.Plane(new THREE.Vector3(0, -1, 0), pageHeight / 2),
-          new THREE.Plane(new THREE.Vector3(0, 1, 0), pageHeight / 2),
-        ];
-
-        const backClipPlanes = [
-          new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0),
-          new THREE.Plane(new THREE.Vector3(1, 0, 0), pageWidth),
-          new THREE.Plane(new THREE.Vector3(0, -1, 0), pageHeight / 2),
-          new THREE.Plane(new THREE.Vector3(0, 1, 0), pageHeight / 2),
-        ];
-
-        const frontMaterial = new THREE.MeshBasicMaterial({
-          map: texture,
-          transparent: true,
-          clippingPlanes: clipPlanes,
-        });
-
-        const frontMesh = new THREE.Mesh(decorationGeometry, frontMaterial);
-        frontMesh.position.set(pageWidth / 2, 0, pageMesh.position.z + 0.015);
-        pivot.add(frontMesh);
-
-        const backMaterial = new THREE.MeshBasicMaterial({
-          map: texture,
-          transparent: true,
-          clippingPlanes: backClipPlanes,
-        });
-        const backMesh = new THREE.Mesh(decorationGeometry.clone(), backMaterial);
-        backMesh.position.set(-pageWidth / 2, 0, pageMesh.position.z - 0.015);
-        backMesh.rotation.y = Math.PI;
-        pages[i - 1]?.add(backMesh);
-
-        decorationPairs[i] = {front: frontMesh, back: backMesh};
-
-        renderer.localClippingEnabled = true;
-      }
-
-      pivot.rotation.y = baseRotation(i);
-      scene.add(pivot);
-      pages.push(pivot);
+    if (i > 0 && i < config.numPages - 1) {
+      const {front, back} = createDecoration(i, textureLoader, pageMesh.position.z);
+      pivot.add(front);
+      pages[i - 1]?.add(back);
+      decorationPairs[i] = {front, back};
     }
 
-    function animate() {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
+    pivot.rotation.y = i * config.rotationStep;
+    return pivot;
+  }
+
+  function createDecoration(i: number, textureLoader: THREE.TextureLoader, z: number) {
+    const geometry = new THREE.PlaneGeometry(config.pageWidth * 0.3, config.pageHeight * 0.3);
+    const texture = textureLoader.load(textures.decorations[i % textures.decorations.length]);
+
+    const clipPlanes = [
+      new THREE.Plane(new THREE.Vector3(-1, 0, 0), config.pageWidth),
+      new THREE.Plane(new THREE.Vector3(1, 0, 0), 0),
+      new THREE.Plane(new THREE.Vector3(0, -1, 0), config.pageHeight / 2),
+      new THREE.Plane(new THREE.Vector3(0, 1, 0), config.pageHeight / 2),
+    ];
+
+    const backClipPlanes = [
+      new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0),
+      new THREE.Plane(new THREE.Vector3(1, 0, 0), config.pageWidth),
+      new THREE.Plane(new THREE.Vector3(0, -1, 0), config.pageHeight / 2),
+      new THREE.Plane(new THREE.Vector3(0, 1, 0), config.pageHeight / 2),
+    ];
+
+    const front = new THREE.Mesh(
+      geometry,
+      new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        clippingPlanes: clipPlanes,
+      }),
+    );
+    front.position.set(config.pageWidth / 2, 0, z + 0.015);
+
+    const back = new THREE.Mesh(
+      geometry.clone(),
+      new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        clippingPlanes: backClipPlanes,
+      }),
+    );
+    back.position.set(-config.pageWidth / 2, 0, z - 0.015);
+    back.rotation.y = Math.PI;
+
+    return {front, back};
+  }
+
+  function initScene() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(0, 0, 6);
+    camera.lookAt(0, 0, 0);
+
+    renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.localClippingEnabled = true;
+    container.appendChild(renderer.domElement);
+
+    const textureLoader = new THREE.TextureLoader();
+    for (let i = 0; i < config.numPages; i++) {
+      const page = createPage(i, textureLoader);
+      scene.add(page);
+      pages.push(page);
     }
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+
+  function handleResize() {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  }
+
+  onMount(() => {
+    initScene();
     animate();
-
-    const onWindowResize = () => {
-      camera.aspect = container.clientWidth / container.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
-    };
-    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      window.removeEventListener('resize', onWindowResize);
+      window.removeEventListener('resize', handleResize);
       container.removeChild(renderer.domElement);
     };
   });
 
   function onPointerDown(event: PointerEvent) {
-    if (isFlipping || currentPage >= numPages) return;
+    if (isFlipping || currentPage >= config.numPages) return;
     isDragging = true;
     startX = event.clientX;
     deltaX = 0;
@@ -148,30 +167,21 @@
   function onPointerMove(event: PointerEvent) {
     if (!isDragging) return;
     deltaX = event.clientX - startX;
-
     const normalized = deltaX * 0.001;
     const clamped = Math.max(-1, Math.min(1, normalized));
 
-    if (clamped < 0 && currentPage < numPages) {
-      pages[currentPage].rotation.y = baseRotation(currentPage) + clamped * Math.PI;
+    const pageIndex = clamped < 0 ? currentPage : currentPage - 1;
+    if (pageIndex < 0 || pageIndex >= config.numPages) return;
 
-      const pair = decorationPairs[currentPage];
-      if (pair) {
-        const parallaxFactor = 1;
-        const offset = clamped * pageWidth * parallaxFactor;
-        pair.front.position.x = pageWidth / 2 + offset;
-        pair.back.position.x = -pageWidth / 2 - offset;
-      }
-    } else if (clamped > 0 && currentPage > 0) {
-      pages[currentPage - 1].rotation.y = baseRotation(currentPage - 1) + (clamped - 1) * Math.PI;
+    const page = pages[pageIndex];
+    const pair = decorationPairs[pageIndex];
+    const rotation = (clamped < 0 ? clamped : clamped - 1) * Math.PI;
 
-      const pair = decorationPairs[currentPage - 1];
-      if (pair) {
-        const parallaxFactor = 1;
-        const offset = (clamped - 1) * pageWidth * parallaxFactor;
-        pair.front.position.x = pageWidth / 2 + offset;
-        pair.back.position.x = -pageWidth / 2 - offset;
-      }
+    page.rotation.y = pageIndex * config.rotationStep + rotation;
+    if (pair) {
+      const offset = rotation * config.pageWidth * config.parallaxFactor;
+      pair.front.position.x = config.pageWidth / 2 + offset;
+      pair.back.position.x = -config.pageWidth / 2 - offset;
     }
   }
 
@@ -179,89 +189,51 @@
     if (!isDragging || isFlipping) return;
     isDragging = false;
 
-    const threshold = Math.PI / 2;
+    const pageIndex = deltaX < 0 ? currentPage : currentPage - 1;
+    if (pageIndex < 0 || pageIndex >= config.numPages) return;
 
-    function updatePair(pair: {front: THREE.Mesh; back: THREE.Mesh}) {
-      if (!pair) return;
-      const tl = gsap.timeline();
+    const page = pages[pageIndex];
+    const pair = decorationPairs[pageIndex];
+    const angle = page.rotation.y - pageIndex * config.rotationStep;
+    const isForwardFlip = deltaX < 0 && angle < -Math.PI / 2;
+    const isBackwardFlip = deltaX > 0 && angle > -Math.PI / 2;
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        if (isForwardFlip) currentPage++;
+        else if (isBackwardFlip) currentPage--;
+        isFlipping = false;
+      },
+    });
+
+    const rStep = config.rotationStep;
+
+    tl.to(page.rotation, {
+      y: isForwardFlip
+        ? -Math.PI + pageIndex * rStep
+        : isBackwardFlip
+          ? pageIndex * rStep
+          : deltaX < 0
+            ? pageIndex * rStep
+            : -Math.PI + pageIndex * rStep,
+      duration: config.animationDuration,
+      ease: 'power2.out',
+    });
+
+    if (pair) {
       tl.to(
         pair.front.position,
-        {
-          x: pageWidth / 2,
-          duration: 0.5,
-          ease: 'power2.out',
-        },
+        {x: config.pageWidth / 2, duration: config.animationDuration, ease: 'power2.out'},
         '<',
       );
       tl.to(
         pair.back.position,
-        {
-          x: -pageWidth / 2,
-          duration: 0.5,
-          ease: 'power2.out',
-        },
+        {x: -config.pageWidth / 2, duration: config.animationDuration, ease: 'power2.out'},
         '<',
       );
     }
 
-    if (deltaX < 0 && currentPage < numPages) {
-      const page = pages[currentPage];
-      const angle = page.rotation.y - baseRotation(currentPage);
-      const pair = decorationPairs[currentPage];
-
-      if (angle < -threshold) {
-        isFlipping = true;
-        const tl = gsap.timeline({
-          onComplete: () => {
-            currentPage++;
-            isFlipping = false;
-          },
-        });
-        tl.to(page.rotation, {
-          y: -Math.PI + baseRotation(currentPage),
-          duration: 0.5,
-          ease: 'power2.out',
-        });
-
-        updatePair(pair);
-      } else {
-        const tl = gsap.timeline();
-        tl.to(page.rotation, {
-          y: baseRotation(currentPage),
-          duration: 0.5,
-          ease: 'power2.out',
-        });
-        updatePair(pair);
-      }
-    } else if (deltaX > 0 && currentPage > 0) {
-      const page = pages[currentPage - 1];
-      const angle = page.rotation.y - baseRotation(currentPage - 1);
-      const pair = decorationPairs[currentPage - 1];
-
-      if (angle > -threshold) {
-        isFlipping = true;
-        const tl = gsap.timeline({
-          onComplete: () => {
-            currentPage--;
-            isFlipping = false;
-          },
-        });
-        tl.to(page.rotation, {
-          y: baseRotation(currentPage - 1),
-          duration: 0.5,
-          ease: 'power2.out',
-        });
-        updatePair(pair);
-      } else {
-        const tl = gsap.timeline();
-        tl.to(page.rotation, {
-          y: -Math.PI + baseRotation(currentPage - 1),
-          duration: 0.5,
-          ease: 'power2.out',
-        });
-        updatePair(pair);
-      }
-    }
+    isFlipping = isForwardFlip || isBackwardFlip;
   }
 </script>
 
