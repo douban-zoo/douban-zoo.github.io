@@ -1,18 +1,18 @@
 <script lang="ts">
-  import {onMount} from 'svelte';
+  import { onMount } from 'svelte';
   import * as THREE from 'three';
-  import {gsap} from 'gsap';
+  import { gsap } from 'gsap';
 
   let container: HTMLDivElement;
   let currentPage = 0;
   let isFlipping = false;
   const numPages = 6;
   const pages: THREE.Group[] = [];
+  const decorationMeshes: THREE.Mesh[] = []; // Store decoration meshes
 
   const pageWidth = 2;
   const pageHeight = 3;
   const pageDepth = 0.02;
-  const gap = 0.02;
 
   let startX = 0;
   let deltaX = 0;
@@ -28,7 +28,7 @@
     camera.position.set(0, 0, 5);
     camera.lookAt(0, 0, 0);
 
-    const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
@@ -38,11 +38,16 @@
       textureLoader.load('/imgs/meidi2.png'),
       textureLoader.load('/imgs/meidi3.png'),
       textureLoader.load('/imgs/meidi4.png'),
-      textureLoader.load('/imgs/flower.png'),
-      textureLoader.load('/imgs/zoo.png'),
+      textureLoader.load('/imgs/meidi5.png'),
+      textureLoader.load('/imgs/meidi6.png'),
     ];
 
-    const sideMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
+    const decorations = [
+      textureLoader.load('/imgs/zoo.png'),
+      textureLoader.load('/imgs/flower.png'),
+    ];
+
+    const sideMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
     for (let i = 0; i < numPages; i++) {
       const pivot = new THREE.Group();
@@ -58,8 +63,8 @@
       frontTexture.needsUpdate = true;
       backTexture.needsUpdate = true;
 
-      const frontMaterial = new THREE.MeshBasicMaterial({map: frontTexture, side: THREE.DoubleSide});
-      const backMaterial = new THREE.MeshBasicMaterial({map: backTexture, side: THREE.DoubleSide,});
+      const frontMaterial = new THREE.MeshBasicMaterial({ map: frontTexture, side: THREE.DoubleSide });
+      const backMaterial = new THREE.MeshBasicMaterial({ map: backTexture, side: THREE.DoubleSide });
 
       const materials = [sideMaterial, sideMaterial, sideMaterial, sideMaterial, frontMaterial, backMaterial];
 
@@ -67,6 +72,20 @@
       pageMesh.position.x = pageWidth / 2;
 
       pivot.add(pageMesh);
+
+      if (i > 0 && i < numPages - 1) {
+        const decorationGeometry = new THREE.PlaneGeometry(pageWidth * 0.3, pageHeight * 0.3);
+        const decorationMaterial = new THREE.MeshBasicMaterial({
+          map: decorations[i % decorations.length],
+          transparent: true,
+          side: THREE.DoubleSide,
+        });
+        const decorationMesh = new THREE.Mesh(decorationGeometry, decorationMaterial);
+        decorationMesh.position.set(pageWidth / 2, 0, pageDepth / 2 + 0.01); 
+        pivot.add(decorationMesh);
+        decorationMeshes[i] = decorationMesh;
+      }
+
       pivot.rotation.y = baseRotation(i);
       scene.add(pivot);
       pages.push(pivot);
@@ -107,61 +126,124 @@
 
     if (clamped < 0 && currentPage < numPages) {
       pages[currentPage].rotation.y = baseRotation(currentPage) + clamped * Math.PI;
+      if (currentPage > 0 && currentPage < numPages - 1 && decorationMeshes[currentPage]) {
+        const parallaxFactor = 0.5;
+        decorationMeshes[currentPage].position.x = pageWidth / 2 + clamped * pageWidth * parallaxFactor;
+      }
     } else if (clamped > 0 && currentPage > 0) {
       pages[currentPage - 1].rotation.y = baseRotation(currentPage - 1) - (1 - clamped) * Math.PI;
+      if (currentPage - 1 > 0 && currentPage - 1 < numPages - 1 && decorationMeshes[currentPage - 1]) {
+        const parallaxFactor = 0.5;
+        decorationMeshes[currentPage - 1].position.x = pageWidth / 2 - (1 - clamped) * pageWidth * parallaxFactor;
+      }
     }
   }
 
   function onPointerUp() {
-    if (!isDragging || isFlipping) return;
-    isDragging = false;
+  if (!isDragging || isFlipping) return;
+  isDragging = false;
 
-    const threshold = Math.PI / 2;
+  const threshold = Math.PI / 2;
 
-    if (deltaX < 0 && currentPage < numPages) {
-      const page = pages[currentPage];
-      const angle = page.rotation.y - baseRotation(currentPage);
-      if (angle < -threshold) {
-        isFlipping = true;
-        gsap.to(page.rotation, {
-          y: -Math.PI + baseRotation(currentPage),
-          duration: 0.5,
-          ease: 'power2.out',
-          onComplete: () => {
-            currentPage++;
-            isFlipping = false;
+  if (deltaX < 0 && currentPage < numPages) {
+    const page = pages[currentPage];
+    const angle = page.rotation.y - baseRotation(currentPage);
+    const decoration = decorationMeshes[currentPage];
+
+    if (angle < -threshold) {
+      isFlipping = true;
+      const tl = gsap.timeline({
+        onComplete: () => {
+          currentPage++;
+          isFlipping = false;
+        },
+      });
+      tl.to(page.rotation, {
+        y: -Math.PI + baseRotation(currentPage),
+        duration: 0.5,
+        ease: 'power2.out',
+      });
+      if (decoration) {
+        tl.to(
+          decoration.position,
+          {
+            x: pageWidth / 2,
+            duration: 0.5,
+            ease: 'power2.out',
           },
-        });
-      } else {
-        gsap.to(page.rotation, {
-          y: baseRotation(currentPage),
-          duration: 0.5,
-          ease: 'power2.out',
-        });
+          '<' // 与前一个动画同时开始
+        );
       }
-    } else if (deltaX > 0 && currentPage > 0) {
-      const page = pages[currentPage - 1];
-      const angle = page.rotation.y - baseRotation(currentPage - 1);
-      if (angle > -threshold) {
-        isFlipping = true;
-        gsap.to(page.rotation, {
-          y: baseRotation(currentPage - 1),
-          duration: 0.5,
-          ease: 'power2.out',
-          onComplete: () => {
-            currentPage--;
-            isFlipping = false;
+    } else {
+      const tl = gsap.timeline();
+      tl.to(page.rotation, {
+        y: baseRotation(currentPage),
+        duration: 0.5,
+        ease: 'power2.out',
+      });
+      if (decoration) {
+        tl.to(
+          decoration.position,
+          {
+            x: pageWidth / 2,
+            duration: 0.5,
+            ease: 'power2.out',
           },
-        });
-      } else {
-        gsap.to(page.rotation, {
-          y: -Math.PI + baseRotation(currentPage - 1),
-          duration: 0.5,
-          ease: 'power2.out',
-        });
+          '<'
+        );
+      }
+    }
+  } else if (deltaX > 0 && currentPage > 0) {
+    const page = pages[currentPage - 1];
+    const angle = page.rotation.y - baseRotation(currentPage - 1);
+    const decoration = decorationMeshes[currentPage - 1];
+
+    if (angle > -threshold) {
+      isFlipping = true;
+      const tl = gsap.timeline({
+        onComplete: () => {
+          currentPage--;
+          isFlipping = false;
+        },
+      });
+      tl.to(page.rotation, {
+        y: baseRotation(currentPage - 1),
+        duration: 0.5,
+        ease: 'power2.out',
+      });
+      if (decoration) {
+        tl.to(
+          decoration.position,
+          {
+            x: pageWidth / 2,
+            duration: 0.5,
+            ease: 'power2.out',
+          },
+          '<'
+        );
+      }
+    } else {
+      const tl = gsap.timeline();
+      tl.to(page.rotation, {
+        y: -Math.PI + baseRotation(currentPage - 1),
+        duration: 0.5,
+        ease: 'power2.out',
+      });
+      if (decoration) {
+        tl.to(
+          decoration.position,
+          {
+            x: pageWidth / 2,
+            duration: 0.5,
+            ease: 'power2.out',
+          },
+          '<'
+        );
       }
     }
   }
+}
+
 </script>
 
 <div
@@ -172,42 +254,6 @@
   on:pointerup={onPointerUp}
 />
 
-<div class="absolute bottom-4 left-4 space-x-4">
-  <button
-    on:click={() => {
-      if (currentPage === 0 || isFlipping) return;
-      currentPage--;
-      gsap.to(pages[currentPage].rotation, {
-        y: baseRotation(currentPage),
-        duration: 1,
-        ease: 'power2.inOut',
-      });
-    }}
-    disabled={currentPage === 0}
-    class="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-  >
-    Previous
-  </button>
-  <button
-    on:click={() => {
-      if (currentPage >= numPages || isFlipping) return;
-      isFlipping = true;
-      gsap.to(pages[currentPage].rotation, {
-        y: -Math.PI + baseRotation(currentPage),
-        duration: 1,
-        ease: 'power2.inOut',
-        onComplete: () => {
-          currentPage++;
-          isFlipping = false;
-        },
-      });
-    }}
-    disabled={currentPage === numPages}
-    class="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-  >
-    Next
-  </button>
-</div>
 
 <style>
   .w-full {
