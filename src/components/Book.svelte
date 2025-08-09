@@ -35,16 +35,17 @@
         {texture: '/imgs/zoo.png', parallaxFactor: 0.3, offset: {x: 2, y: 0.1, z: 0.02}},
         {texture: '/imgs/flower.png', parallaxFactor: -0.5, offset: {x: -1.2, y: -0.1, z: 0.02}},
       ],
-      [{texture: '/imgs/dec1.png', parallaxFactor: 0.4, offset: {x: 3.1, y: 0, z: 0.02}}],
+      [{texture: '/imgs/dec1.png', parallaxFactor: 0.4, offset: {x: 2.6, y: 0, z: 0.02}}],
       [
-        {texture: '/imgs/dec2.png', parallaxFactor: -0.5, offset: {x: -1, y: 0.2, z: 0.02}},
+        {texture: '/imgs/dec2.png', parallaxFactor: -0.5, offset: {x: -2, y: 0.2, z: 0.02}},
         {texture: '/imgs/zoo.png', parallaxFactor: 0.4, offset: {x: 3.0, y: -0.4, z: 0.03}},
-        {texture: '/imgs/flower.png', parallaxFactor: 0.2, offset: {x: 2.4, y: 0, z: 0.02}},
+        {texture: '/imgs/flower.png', parallaxFactor: 0.4, offset: {x: 2.4, y: 0, z: 0.02}},
       ],
       [
         {texture: '/imgs/dec1.png', parallaxFactor: 0.3, offset: {x: 1.2, y: 0.1, z: 0.02}},
         {texture: '/imgs/zoo.png', parallaxFactor: 0.4, offset: {x: 3.0, y: -0.4, z: 0.03}},
       ],
+      [],
     ],
   };
 
@@ -58,7 +59,6 @@
     parallaxFactor: number;
     offset: {x: number; y: number; z: number};
     localClipPlanes: THREE.Plane[];
-    localBackClipPlanes: THREE.Plane[];
   }[][] = [];
 
   function createDecorations(i: number, textureLoader: THREE.TextureLoader, z: number) {
@@ -69,7 +69,6 @@
       parallaxFactor: number;
       offset: {x: number; y: number; z: number};
       localClipPlanes: THREE.Plane[];
-      localBackClipPlanes: THREE.Plane[];
     }[] = [];
 
     decorations.forEach((decConfig) => {
@@ -118,7 +117,6 @@
         parallaxFactor: decConfig.parallaxFactor,
         offset: decConfig.offset,
         localClipPlanes,
-        localBackClipPlanes,
       });
     });
     return pairs;
@@ -144,14 +142,13 @@
     const pageMesh = new THREE.Mesh(geometry, materials);
     pageMesh.position.x = config.pageWidth / 2;
     pivot.add(pageMesh);
-    if (i > 0 && i < config.numPages - 1) {
-      const pairs = createDecorations(i, textureLoader, pageMesh.position.z);
-      pairs.forEach((pair) => {
-        pivot.add(pair.front);
-        pages[i - 1]?.add(pair.back);
-      });
-      decorationPairs[i] = pairs;
-    }
+
+    const pairs = createDecorations(i, textureLoader, pageMesh.position.z);
+    pairs.forEach((pair) => {
+      pivot.add(pair.front);
+      pages[i - 1]?.add(pair.back);
+    });
+    decorationPairs[i] = pairs;
     pivot.rotation.y = i * config.rotationStep;
     return pivot;
   }
@@ -164,7 +161,9 @@
 
     renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
     renderer.setSize(container.clientWidth, container.clientHeight);
+
     renderer.localClippingEnabled = true;
+
     container.appendChild(renderer.domElement);
     const textureLoader = new THREE.TextureLoader();
     const loadPromises = textures.pages.map((url) => new Promise((resolve) => textureLoader.load(url, resolve)));
@@ -227,7 +226,7 @@
       const influenceFromRight = rightRotation;
       const totalInfluence = influenceFromLeft + influenceFromRight - Math.PI;
 
-      decs.forEach((pair, idx) => {
+      decs.forEach((pair) => {
         const parallaxShift = totalInfluence * config.pageWidth * pair.parallaxFactor;
         pair.front.position.x = pair.offset.x + parallaxShift;
         pair.back.position.x = -pair.offset.x - parallaxShift;
@@ -239,15 +238,7 @@
           return worldPlane;
         });
 
-        const worldBackClipPlanes = pair.localBackClipPlanes.map((plane) => {
-          const worldPlane = plane.clone();
-          worldPlane.applyMatrix4(pages[i + 1].matrixWorld);
-
-          return worldPlane;
-        });
-
         pair.front.material.clippingPlanes = worldClipPlanes;
-        pair.back.material.clippingPlanes = worldBackClipPlanes;
       });
     }
   }
