@@ -13,9 +13,9 @@
 
   const config = {
     numPages: 6,
-    pageWidth: 2,
+    pageWidth: 2.4,
     pageHeight: 3,
-    pageDepth: 0.03,
+    pageDepth: 0.02,
     rotationStep: 0.01,
     dragSensitivity: 0.2,
     snapDuration: 0.8,
@@ -25,23 +25,12 @@
     pages: ['/imgs/bg.png', '/imgs/bg2.png', '/imgs/bg.png', '/imgs/bg2.png', '/imgs/bg.png', '/imgs/bg2.png'],
     decorations: [
       [],
-      [
-        {texture: '/imgs/zoo.png', parallaxFactor: 0.3, offset: {x: 2, y: 0.1, z: 0.02}},
-        {texture: '/imgs/dec1.png', parallaxFactor: -0.4, offset: {x: -1.2, y: -0.1, z: 0.02}},
-      ],
-      [
-        {texture: '/imgs/zoo.png', parallaxFactor: 0.4, offset: {x: 3.0, y: -0.4, z: 0.03}},
-        {texture: '/imgs/dec2.png', parallaxFactor: 0.4, offset: {x: 2.6, y: 0, z: 0.02}},
-      ],
-      [
-        {texture: '/imgs/dec2.png', parallaxFactor: -0.5, offset: {x: -2, y: 0.2, z: 0.02}},
-        {texture: '/imgs/zoo.png', parallaxFactor: 0.4, offset: {x: 3.0, y: -0.4, z: 0.03}},
-        {texture: '/imgs/flower.png', parallaxFactor: 0.4, offset: {x: 2.4, y: 0, z: 0.02}},
-      ],
+      [{texture: '/imgs/dec1.png', parallaxFactor: -0.4, offset: {x: -1.2, y: -0.1, z: 0.02}}],
+      [{texture: '/imgs/dec2.png', parallaxFactor: 0.4, offset: {x: 2.6, y: 0, z: 0.02}}],
+      [{texture: '/imgs/dec2.png', parallaxFactor: -0.5, offset: {x: -2, y: 0.2, z: 0.02}}],
       [
         {texture: '/imgs/dec1.png', parallaxFactor: -0.3, offset: {x: -1.2, y: -0.1, z: 0.02}},
         {texture: '/imgs/dec2.png', parallaxFactor: 0.3, offset: {x: 1.6, y: 0.1, z: 0.02}},
-        {texture: '/imgs/zoo.png', parallaxFactor: 0.4, offset: {x: 3.0, y: -0.4, z: 0.03}},
       ],
       [],
     ],
@@ -94,7 +83,6 @@
         new THREE.Plane(new THREE.Vector3(1, 0, 0), config.pageWidth),
       ];
 
-      // 先用一个占位 geometry，加载完成后会替换
       const placeholderGeom = new THREE.PlaneGeometry(1, 1);
 
       const front = new THREE.Mesh(
@@ -133,27 +121,92 @@
     return pairs;
   }
 
+  function createRoundedBoxGeometry(
+    width: number,
+    height: number,
+    depth: number,
+    radius: number,
+    segments: number,
+  ): THREE.BoxGeometry {
+    const geometry = new THREE.BoxGeometry(width, height, depth, segments, segments, segments);
+
+    const position = geometry.attributes.position;
+    const vertex = new THREE.Vector3();
+
+    const innerWidth = width / 2 - radius;
+    const innerHeight = height / 2 - radius;
+
+    for (let i = 0; i < position.count; i++) {
+      vertex.fromBufferAttribute(position, i);
+
+      if (vertex.x > innerWidth && Math.abs(vertex.y) > innerHeight) {
+        const cornerCenter = new THREE.Vector3(innerWidth, Math.sign(vertex.y) * innerHeight, vertex.z);
+
+        const offset = new THREE.Vector3().subVectors(vertex, cornerCenter);
+
+        if (offset.length() > radius) {
+          offset.setLength(radius);
+          const newPos = cornerCenter.add(offset);
+          position.setXYZ(i, newPos.x, newPos.y, newPos.z);
+        }
+      }
+    }
+
+    geometry.computeVertexNormals();
+    return geometry;
+  }
+
   function createPage(i: number, textureLoader: THREE.TextureLoader): THREE.Group {
     const pivot = new THREE.Group();
-    const geometry = new THREE.BoxGeometry(config.pageWidth, config.pageHeight, config.pageDepth);
-    const sideMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
-    const frontTexture = textureLoader.load(textures.pages[i]).clone();
+
+    const pageRadius = 0.2;
+
+    const geometry = createRoundedBoxGeometry(config.pageWidth, config.pageHeight, config.pageDepth, pageRadius, 64);
+
+    const frontTexture = textureLoader.load(textures.pages[i]);
     frontTexture.repeat.set(0.5, 1);
     frontTexture.offset.set(0.5, 0);
     frontTexture.colorSpace = THREE.SRGBColorSpace;
 
-    const backTexture = textureLoader.load(textures.pages[(i + 1) % config.numPages]).clone();
-    backTexture.repeat.set(0.5, 1);
+    const backTexture = textureLoader.load(textures.pages[(i + 1) % config.numPages]);
     backTexture.colorSpace = THREE.SRGBColorSpace;
+    backTexture.repeat.set(0.5, 1);
 
+    const sideFrontMat = new THREE.MeshBasicMaterial({
+      map: frontTexture,
+      transparent: true,
+    });
+
+    const sideBackMat = new THREE.MeshBasicMaterial({
+      map: backTexture,
+      transparent: true,
+    });
+
+    const uvAttr = geometry.attributes.uv;
+    const posAttr = geometry.attributes.position;
+    const zDepth = config.pageDepth / 2;
+
+    for (let f = 0; f < uvAttr.count; f++) {
+      // const x = posAttr.getX(f);
+      const z = posAttr.getZ(f);
+
+      if (z === zDepth) {
+        uvAttr.setX(f, 1.0);
+      } else if (z === -zDepth) {
+        uvAttr.setX(f, 0.0);
+      }
+    }
+
+    uvAttr.needsUpdate = true;
     const materials = [
-      sideMaterial,
-      sideMaterial,
-      sideMaterial,
-      sideMaterial,
+      sideFrontMat,
+      sideBackMat,
+      sideFrontMat,
+      sideBackMat,
       new THREE.MeshBasicMaterial({map: frontTexture, transparent: true}),
       new THREE.MeshBasicMaterial({map: backTexture, transparent: true}),
     ];
+
     const pageMesh = new THREE.Mesh(geometry, materials);
     pageMesh.position.x = config.pageWidth / 2;
     pivot.add(pageMesh);
@@ -164,6 +217,7 @@
       pages[i - 1]?.add(pair.back);
     });
     decorationPairs[i] = pairs;
+
     pivot.rotation.y = i * config.rotationStep;
     return pivot;
   }
@@ -174,7 +228,7 @@
     camera.position.set(0, 0, 6);
     camera.lookAt(0, 0, 0);
 
-    renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+    renderer = new THREE.WebGLRenderer({antialias: true, alpha: true, logarithmicDepthBuffer: false});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
 
@@ -185,13 +239,17 @@
     container.appendChild(renderer.domElement);
     const textureLoader = new THREE.TextureLoader();
     const loadPromises = textures.pages.map((url) => new Promise((resolve) => textureLoader.load(url, resolve)));
-    Promise.all(loadPromises).then(() => {
-      for (let i = 0; i < config.numPages; i++) {
-        const page = createPage(i, textureLoader);
-        scene.add(page);
-        pages.push(page);
-      }
-    });
+    Promise.all(loadPromises)
+      .then(() => {
+        for (let i = 0; i < config.numPages; i++) {
+          const page = createPage(i, textureLoader);
+          scene.add(page);
+          pages.push(page);
+        }
+      })
+      .finally(() => {
+        updatePages(globalProgress);
+      });
   }
 
   function animate() {
@@ -202,7 +260,9 @@
   function handleResize() {
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
+
     renderer.setSize(container.clientWidth, container.clientHeight);
+
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   }
 
@@ -233,6 +293,10 @@
       page.rotation.y = i * config.rotationStep + flipRotation;
       pageRotations.push(flipRotation);
     }
+    // console.log(
+    //   'Current rotations:',
+    //   pageRotations.map((r) => r.toFixed(6)),
+    // );
 
     for (let i = 0; i < config.numPages; i++) {
       const decs = decorationPairs[i];
@@ -332,7 +396,7 @@
 
 <div
   bind:this={container}
-  class="w-full h-full cursor-grab"
+  class=" cursor-grab touch-none md:h-[80vh] w-[90vw] h-[60vh] -mt-24"
   on:pointerdown={onPointerDown}
   on:pointermove={onPointerMove}
   on:pointerup={onPointerUp}
@@ -342,9 +406,4 @@
 />
 
 <style>
-  .w-full {
-    width: 100%;
-    height: 100vh;
-    touch-action: none;
-  }
 </style>
