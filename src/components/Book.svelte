@@ -22,7 +22,7 @@
   };
 
   const textures = {
-    pages: ['/imgs/bg.png', '/imgs/bg2.png', '/imgs/bg.png', '/imgs/bg2.png', '/imgs/bg.png', '/imgs/bg2.png'],
+    pages: ['/imgs/bg-cover.png', '/imgs/bg-meidi.png', '/imgs/bg-jongjong.png', '/imgs/bg-meidi.png', '/imgs/bg-jongjong.png', '/imgs/bg-meidi.png'],
     decorations: [
       [],
       [{texture: '/imgs/dec1.png', parallaxFactor: -0.4, offset: {x: -1.2, y: -0.1, z: 0.02}}],
@@ -30,7 +30,7 @@
       [{texture: '/imgs/dec2.png', parallaxFactor: -0.5, offset: {x: -2, y: 0.2, z: 0.02}}],
       [
         {texture: '/imgs/dec1.png', parallaxFactor: -0.3, offset: {x: -1.2, y: -0.1, z: 0.02}},
-        {texture: '/imgs/dec2.png', parallaxFactor: 0.3, offset: {x: 1.6, y: 0.1, z: 0.02}},
+        {texture: '/imgs/dec2.png', parallaxFactor: 0.3, offset: {x: 1.6, y: 0.1, z: 0.015}},
       ],
       [],
     ],
