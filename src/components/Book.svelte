@@ -8,6 +8,7 @@
   let progressTween = {value: 0};
   let isDragging = false;
   let startX = 0;
+  let deltaX = 0;
   let startProgress = 0;
 
   const config = {
@@ -21,28 +22,25 @@
   };
 
   const textures = {
-    pages: [
-      '/imgs/meidi1.png',
-      '/imgs/meidi2.png',
-      '/imgs/meidi3.png',
-      '/imgs/meidi4.png',
-      '/imgs/meidi5.png',
-      '/imgs/meidi6.png',
-    ],
+    pages: ['/imgs/bg.png', '/imgs/bg2.png', '/imgs/bg.png', '/imgs/bg2.png', '/imgs/bg.png', '/imgs/bg2.png'],
     decorations: [
       [],
       [
         {texture: '/imgs/zoo.png', parallaxFactor: 0.3, offset: {x: 2, y: 0.1, z: 0.02}},
-        {texture: '/imgs/flower.png', parallaxFactor: -0.5, offset: {x: -1.2, y: -0.1, z: 0.02}},
+        {texture: '/imgs/dec1.png', parallaxFactor: -0.4, offset: {x: -1.2, y: -0.1, z: 0.02}},
       ],
-      [{texture: '/imgs/dec1.png', parallaxFactor: 0.4, offset: {x: 2.6, y: 0, z: 0.02}}],
+      [
+        {texture: '/imgs/zoo.png', parallaxFactor: 0.4, offset: {x: 3.0, y: -0.4, z: 0.03}},
+        {texture: '/imgs/dec2.png', parallaxFactor: 0.4, offset: {x: 2.6, y: 0, z: 0.02}},
+      ],
       [
         {texture: '/imgs/dec2.png', parallaxFactor: -0.5, offset: {x: -2, y: 0.2, z: 0.02}},
         {texture: '/imgs/zoo.png', parallaxFactor: 0.4, offset: {x: 3.0, y: -0.4, z: 0.03}},
         {texture: '/imgs/flower.png', parallaxFactor: 0.4, offset: {x: 2.4, y: 0, z: 0.02}},
       ],
       [
-        {texture: '/imgs/dec1.png', parallaxFactor: 0.3, offset: {x: 1.2, y: 0.1, z: 0.02}},
+        {texture: '/imgs/dec1.png', parallaxFactor: -0.3, offset: {x: -1.2, y: -0.1, z: 0.02}},
+        {texture: '/imgs/dec2.png', parallaxFactor: 0.3, offset: {x: 1.6, y: 0.1, z: 0.02}},
         {texture: '/imgs/zoo.png', parallaxFactor: 0.4, offset: {x: 3.0, y: -0.4, z: 0.03}},
       ],
       [],
@@ -72,11 +70,19 @@
     }[] = [];
 
     decorations.forEach((decConfig) => {
-      const decoWidth = config.pageWidth * 0.3;
-      const decoHeight = config.pageHeight * 0.3;
+      const texture = textureLoader.load(decConfig.texture, (tex: THREE.Texture) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
 
-      const geometry = new THREE.PlaneGeometry(decoWidth, decoHeight);
-      const texture = textureLoader.load(decConfig.texture);
+        const aspect = tex.image.width / tex.image.height;
+        const targetHeight = config.pageHeight * 0.3;
+        const targetWidth = targetHeight * aspect;
+
+        front.geometry.dispose();
+        front.geometry = new THREE.PlaneGeometry(targetWidth, targetHeight);
+
+        back.geometry.dispose();
+        back.geometry = new THREE.PlaneGeometry(targetWidth, targetHeight);
+      });
 
       const localClipPlanes = [
         new THREE.Plane(new THREE.Vector3(-1, 0, 0), config.pageWidth),
@@ -88,10 +94,15 @@
         new THREE.Plane(new THREE.Vector3(1, 0, 0), config.pageWidth),
       ];
 
+      // 先用一个占位 geometry，加载完成后会替换
+      const placeholderGeom = new THREE.PlaneGeometry(1, 1);
+
       const front = new THREE.Mesh(
-        geometry,
+        placeholderGeom,
         new THREE.MeshBasicMaterial({
           map: texture,
+          alphaTest: 0.3,
+          depthWrite: true,
           transparent: true,
           clippingPlanes: localClipPlanes.map((plane) => plane.clone()),
         }),
@@ -99,16 +110,16 @@
       front.position.set(-config.pageWidth, decConfig.offset.y || 0, z + decConfig.offset.z);
 
       const back = new THREE.Mesh(
-        geometry.clone(),
+        placeholderGeom.clone(),
         new THREE.MeshBasicMaterial({
           map: texture,
           transparent: true,
+          alphaTest: 0.3,
+          depthWrite: true,
           clippingPlanes: localBackClipPlanes.map((plane) => plane.clone()),
         }),
       );
-
       back.position.set(config.pageWidth, decConfig.offset.y || 0, z - decConfig.offset.z);
-
       back.rotation.y = Math.PI;
 
       pairs.push({
@@ -129,15 +140,19 @@
     const frontTexture = textureLoader.load(textures.pages[i]).clone();
     frontTexture.repeat.set(0.5, 1);
     frontTexture.offset.set(0.5, 0);
+    frontTexture.colorSpace = THREE.SRGBColorSpace;
+
     const backTexture = textureLoader.load(textures.pages[(i + 1) % config.numPages]).clone();
     backTexture.repeat.set(0.5, 1);
+    backTexture.colorSpace = THREE.SRGBColorSpace;
+
     const materials = [
       sideMaterial,
       sideMaterial,
       sideMaterial,
       sideMaterial,
-      new THREE.MeshBasicMaterial({map: frontTexture}),
-      new THREE.MeshBasicMaterial({map: backTexture}),
+      new THREE.MeshBasicMaterial({map: frontTexture, transparent: true}),
+      new THREE.MeshBasicMaterial({map: backTexture, transparent: true}),
     ];
     const pageMesh = new THREE.Mesh(geometry, materials);
     pageMesh.position.x = config.pageWidth / 2;
@@ -160,8 +175,11 @@
     camera.lookAt(0, 0, 0);
 
     renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
 
+    // renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.NoToneMapping;
     renderer.localClippingEnabled = true;
 
     container.appendChild(renderer.domElement);
@@ -263,7 +281,7 @@
     lastMoveTime = now;
     lastMoveX = currentX;
 
-    const deltaX = currentX - startX;
+    deltaX = currentX - startX;
     const progressDelta = (-deltaX / container.clientWidth) * config.dragSensitivity;
     globalProgress = startProgress + progressDelta;
     globalProgress = Math.max(0, Math.min(1, globalProgress));
@@ -278,7 +296,6 @@
     lastMoveX = event.clientX;
     lastMoveTime = performance.now();
     velocityX = 0;
-    container.style.cursor = 'grabbing';
   }
 
   function onPointerUp() {
@@ -289,10 +306,10 @@
     const progressPerSegment = 1 / config.numPages;
     const currentSegment = globalProgress / progressPerSegment;
 
-    const velocityToPageFactor = 0.4;
+    const velocityToPageFactor = 0.6;
     let pageDelta = -velocityX * velocityToPageFactor;
 
-    pageDelta = Math.max(-5, Math.min(5, pageDelta));
+    pageDelta = Math.max(-3, Math.min(3, pageDelta));
 
     let targetSegment = Math.round(currentSegment + pageDelta);
 
@@ -303,7 +320,7 @@
     progressTween.value = globalProgress;
     gsap.to(progressTween, {
       value: targetProgress,
-      duration: config.snapDuration,
+      duration: config.snapDuration + Math.abs(pageDelta) * 0.5,
       ease: 'power2.out',
       onUpdate: () => {
         globalProgress = progressTween.value;
