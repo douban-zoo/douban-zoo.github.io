@@ -16,7 +16,7 @@
     pageHeight: 3,
     pageDepth: 0.03,
     rotationStep: 0.01,
-    dragSensitivity: 0.3,
+    dragSensitivity: 0.2,
     snapDuration: 0.8,
   };
 
@@ -243,17 +243,26 @@
     }
   }
 
-  function onPointerDown(event: PointerEvent) {
-    gsap.killTweensOf(progressTween);
-    isDragging = true;
-    startX = event.clientX;
-    startProgress = globalProgress;
-    container.style.cursor = 'grabbing';
-  }
+  let lastMoveTime = 0;
+  let lastMoveX = 0;
+  let velocityX = 0;
 
   function onPointerMove(event: PointerEvent) {
     if (!isDragging) return;
+
     const currentX = event.clientX;
+    const now = performance.now();
+
+    const dx = event.movementX || currentX - lastMoveX;
+    const dt = now - lastMoveTime;
+
+    if (dt > 0) {
+      velocityX = dx / dt;
+    }
+
+    lastMoveTime = now;
+    lastMoveX = currentX;
+
     const deltaX = currentX - startX;
     const progressDelta = (-deltaX / container.clientWidth) * config.dragSensitivity;
     globalProgress = startProgress + progressDelta;
@@ -261,13 +270,36 @@
     updatePages(globalProgress);
   }
 
+  function onPointerDown(event: PointerEvent) {
+    gsap.killTweensOf(progressTween);
+    isDragging = true;
+    startX = event.clientX;
+    startProgress = globalProgress;
+    lastMoveX = event.clientX;
+    lastMoveTime = performance.now();
+    velocityX = 0;
+    container.style.cursor = 'grabbing';
+  }
+
   function onPointerUp() {
     if (!isDragging) return;
     isDragging = false;
     container.style.cursor = 'grab';
+
     const progressPerSegment = 1 / config.numPages;
-    const targetSegment = Math.round(globalProgress / progressPerSegment);
-    const targetProgress = Math.max(0, Math.min(1, targetSegment * progressPerSegment));
+    const currentSegment = globalProgress / progressPerSegment;
+
+    const velocityToPageFactor = 0.4;
+    let pageDelta = -velocityX * velocityToPageFactor;
+
+    pageDelta = Math.max(-5, Math.min(5, pageDelta));
+
+    let targetSegment = Math.round(currentSegment + pageDelta);
+
+    targetSegment = Math.max(0, Math.min(config.numPages, targetSegment));
+
+    const targetProgress = targetSegment * progressPerSegment;
+
     progressTween.value = globalProgress;
     gsap.to(progressTween, {
       value: targetProgress,
