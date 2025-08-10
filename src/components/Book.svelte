@@ -37,15 +37,16 @@
         {texture: '/imgs/dec-meidi2.png', parallaxFactor: 0.25, offset: {x: 1.4, y: -0.35, z: 0.015}},
       ],
       [
+        {texture: '/imgs/dec-jojo1.png', parallaxFactor: 0.35, offset: {x: 2.75, y: -0.35, z: 0.015}},
+        {texture: '/imgs/dec-jojo2.png', parallaxFactor: 0.2, offset: {x: 1.5, y: -0.25, z: 0.016}},
+      ],
+      [
         {texture: '/imgs/dec-meidi1.png', parallaxFactor: 0.35, offset: {x: 3.2, y: -0.2, z: 0.016}},
         {texture: '/imgs/dec-meidi2.png', parallaxFactor: 0.25, offset: {x: 1.4, y: -0.35, z: 0.015}},
       ],
       [
-        // {texture: '/imgs/dec2.png', parallaxFactor: -0.2, offset: {x: -2, y: 0.2, z: 0.02}}
-      ],
-      [
-        // {texture: '/imgs/dec1.png', parallaxFactor: -0.3, offset: {x: -1.2, y: -0.1, z: 0.02}},
-        // {texture: '/imgs/dec2.png', parallaxFactor: 0.2, offset: {x: 1.6, y: 0.1, z: 0.015}},
+        {texture: '/imgs/dec-jojo1.png', parallaxFactor: 0.35, offset: {x: 3.2, y: -0.2, z: 0.016}},
+        {texture: '/imgs/dec-jojo2.png', parallaxFactor: 0.25, offset: {x: 1.4, y: -0.35, z: 0.015}},
       ],
       [],
     ],
