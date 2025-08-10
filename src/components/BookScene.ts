@@ -27,7 +27,9 @@ export class BookScene {
     this.camera.lookAt(0, 0, 0);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: false });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const maxPixelRatio = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? 3 : 2;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.toneMapping = THREE.NoToneMapping;
     this.renderer.localClippingEnabled = true;
@@ -56,19 +58,20 @@ export class BookScene {
     if (!this.pages.length) return;
     const progressPerSegment = 1 / config.numPages;
     const pageRotations: number[] = [];
-
+    const curPage = Math.floor(progress / progressPerSegment);
     for (let i = 0;i < config.numPages;i++) {
       const page = this.pages[i];
       const segmentStartProgress = i * progressPerSegment;
       const flipProgress = Math.max(0, Math.min(1, (progress - segmentStartProgress) / progressPerSegment));
       const flipRotation = -flipProgress * Math.PI;
+
       page.rotation.y = i * config.rotationStep + flipRotation;
       pageRotations.push(flipRotation);
 
       const pageStartProgress = (i - 2) * progressPerSegment;
       const pageEndProgress = (i + 2) * progressPerSegment;
       page.visible = progress > pageStartProgress && progress < pageEndProgress;
-      page.renderOrder = i;
+      page.renderOrder = Math.abs(curPage - i);
 
       const decs = this.decorationPairs[i];
       if (!decs || decs.length === 0) continue;
@@ -101,7 +104,6 @@ export class BookScene {
     this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   }
 
   public dispose() {

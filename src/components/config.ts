@@ -5,7 +5,7 @@ export const config = {
   pageHeight: 3,
   pageDepth: 0.02,
   rotationStep: 0.01,
-  dragSensitivity: 0.2,
+  dragSensitivity: 0.15,
   snapDuration: 0.8,
 };
 
