@@ -1,7 +1,7 @@
 import os
 
-input_folder = os.path.join(os.path.dirname(__file__), "../public/imgs/pupu")
-output_folder = os.path.join(os.path.dirname(__file__), "../public/imgs/pupu")
+input_folder = os.path.join(os.path.dirname(__file__), "../public/imgs/tmp")
+output_folder = os.path.join(os.path.dirname(__file__), "../public/imgs/tmp")
 
 os.makedirs(output_folder, exist_ok=True)
 

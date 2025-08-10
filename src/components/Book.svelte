@@ -32,12 +32,20 @@
     ],
     decorations: [
       [],
-      [{texture: '/imgs/dec1.png', parallaxFactor: -0.4, offset: {x: -1.2, y: -0.1, z: 0.02}}],
-      [{texture: '/imgs/dec2.png', parallaxFactor: 0.4, offset: {x: 2.6, y: 0, z: 0.02}}],
-      [{texture: '/imgs/dec2.png', parallaxFactor: -0.5, offset: {x: -2, y: 0.2, z: 0.02}}],
       [
-        {texture: '/imgs/dec1.png', parallaxFactor: -0.3, offset: {x: -1.2, y: -0.1, z: 0.02}},
-        {texture: '/imgs/dec2.png', parallaxFactor: 0.3, offset: {x: 1.6, y: 0.1, z: 0.015}},
+        {texture: '/imgs/dec-meidi1.png', parallaxFactor: 0.35, offset: {x: 3.2, y: -0.2, z: 0.016}},
+        {texture: '/imgs/dec-meidi2.png', parallaxFactor: 0.25, offset: {x: 1.4, y: -0.35, z: 0.015}},
+      ],
+      [
+        {texture: '/imgs/dec-meidi1.png', parallaxFactor: 0.35, offset: {x: 3.2, y: -0.2, z: 0.016}},
+        {texture: '/imgs/dec-meidi2.png', parallaxFactor: 0.25, offset: {x: 1.4, y: -0.35, z: 0.015}},
+      ],
+      [
+        // {texture: '/imgs/dec2.png', parallaxFactor: -0.2, offset: {x: -2, y: 0.2, z: 0.02}}
+      ],
+      [
+        // {texture: '/imgs/dec1.png', parallaxFactor: -0.3, offset: {x: -1.2, y: -0.1, z: 0.02}},
+        // {texture: '/imgs/dec2.png', parallaxFactor: 0.2, offset: {x: 1.6, y: 0.1, z: 0.015}},
       ],
       [],
     ],
@@ -70,7 +78,7 @@
         tex.colorSpace = THREE.SRGBColorSpace;
 
         const aspect = tex.image.width / tex.image.height;
-        const targetHeight = config.pageHeight * 0.3;
+        const targetHeight = config.pageHeight * 0.75;
         const targetWidth = targetHeight * aspect;
 
         front.geometry.dispose();
@@ -91,12 +99,11 @@
       ];
 
       const placeholderGeom = new THREE.PlaneGeometry(1, 1);
-
       const front = new THREE.Mesh(
         placeholderGeom,
         new THREE.MeshBasicMaterial({
           map: texture,
-          alphaTest: 0.3,
+          alphaTest: 0.1,
           depthWrite: true,
           transparent: true,
           clippingPlanes: localClipPlanes.map((plane) => plane.clone()),
@@ -109,7 +116,7 @@
         new THREE.MeshBasicMaterial({
           map: texture,
           transparent: true,
-          alphaTest: 0.3,
+          alphaTest: 0.1,
           depthWrite: true,
           clippingPlanes: localBackClipPlanes.map((plane) => plane.clone()),
         }),
@@ -166,7 +173,7 @@
   function createPage(i: number, textureLoader: THREE.TextureLoader): THREE.Group {
     const pivot = new THREE.Group();
 
-    const pageRadius = 0.2;
+    const pageRadius = 0.1;
 
     const geometry = createRoundedBoxGeometry(config.pageWidth, config.pageHeight, config.pageDepth, pageRadius, 64);
 
@@ -287,35 +294,43 @@
 
   function updatePages(progress: number) {
     if (!pages.length) return;
-
     const progressPerSegment = 1 / config.numPages;
     const pageRotations: number[] = [];
+
+
 
     for (let i = 0; i < config.numPages; i++) {
       const page = pages[i];
       const segmentStartProgress = i * progressPerSegment;
       const flipProgress = Math.max(0, Math.min(1, (progress - segmentStartProgress) / progressPerSegment));
       const flipRotation = -flipProgress * Math.PI;
-
       page.rotation.y = i * config.rotationStep + flipRotation;
       pageRotations.push(flipRotation);
-    }
-    // console.log(
-    //   'Current rotations:',
-    //   pageRotations.map((r) => r.toFixed(6)),
-    // );
 
-    for (let i = 0; i < config.numPages; i++) {
+      const pageStartProgress = (i - 2) * progressPerSegment;
+      const pageEndProgress = (i + 2) * progressPerSegment;
+      const pageIsVisible = progress > pageStartProgress && progress < pageEndProgress;
+
+      const spreadStartProgress = (i - 0.75) * progressPerSegment;
+      const spreadEndProgress = (i + 0.75) * progressPerSegment;
+      const isVisible = progress > spreadStartProgress && progress < spreadEndProgress;
+
+      page.visible = pageIsVisible;
+
       const decs = decorationPairs[i];
       if (!decs || decs.length === 0) continue;
 
-      const leftRotation = pageRotations[i - 1];
+      const leftRotation = pageRotations[i - 1] || 0;
       const influenceFromLeft = leftRotation + Math.PI;
       const rightRotation = pageRotations[i];
       const influenceFromRight = rightRotation;
       const totalInfluence = influenceFromLeft + influenceFromRight - Math.PI;
 
       decs.forEach((pair) => {
+        pair.front.visible = isVisible;
+        pair.back.visible = isVisible;
+        if (!isVisible) return;
+
         const parallaxShift = totalInfluence * config.pageWidth * pair.parallaxFactor;
         pair.front.position.x = pair.offset.x + parallaxShift;
         pair.back.position.x = -pair.offset.x - parallaxShift;
@@ -326,12 +341,10 @@
           worldPlane.applyMatrix4(pageMatrix);
           return worldPlane;
         });
-
         pair.front.material.clippingPlanes = worldClipPlanes;
       });
     }
   }
-
   let lastMoveTime = 0;
   let lastMoveX = 0;
   let velocityX = 0;
