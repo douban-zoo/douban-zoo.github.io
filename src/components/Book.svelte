@@ -22,7 +22,14 @@
   };
 
   const textures = {
-    pages: ['/imgs/bg-cover.png', '/imgs/bg-meidi.png', '/imgs/bg-jongjong.png', '/imgs/bg-meidi.png', '/imgs/bg-jongjong.png', '/imgs/bg-meidi.png'],
+    pages: [
+      '/imgs/bg-cover.png',
+      '/imgs/bg-meidi.png',
+      '/imgs/bg-jongjong.png',
+      '/imgs/bg-meidi.png',
+      '/imgs/bg-jongjong.png',
+      '/imgs/bg-meidi.png',
+    ],
     decorations: [
       [],
       [{texture: '/imgs/dec1.png', parallaxFactor: -0.4, offset: {x: -1.2, y: -0.1, z: 0.02}}],
@@ -394,9 +401,10 @@
   }
 </script>
 
+<!-- ??? refactor the size setting -->
 <div
   bind:this={container}
-  class=" cursor-grab touch-none md:h-[80vh] w-[90vw] h-[60vh] -mt-24"
+  class=" cursor-grab touch-none md:h-[90vh] sm:-mt-12 w-[120vw] h-[90vw] md:-mt-24"
   on:pointerdown={onPointerDown}
   on:pointermove={onPointerMove}
   on:pointerup={onPointerUp}
