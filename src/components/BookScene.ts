@@ -90,11 +90,12 @@ export class BookScene {
         pair.front.visible = isVisible;
         pair.back.visible = isVisible;
         if (!isVisible) return;
+
         const parallaxShift = totalInfluence * config.pageWidth * pair.parallaxFactor;
         pair.front.position.x = pair.offset.x + parallaxShift;
         pair.back.position.x = -pair.offset.x - parallaxShift;
 
-        const pageMatrix = this.pages[i].matrixWorld.clone();
+        // const pageMatrix = this.pages[i].matrixWorld.clone();
         // pair.front.material.clippingPlanes = pair.localClipPlanes.map((plane) => plane.clone().applyMatrix4(pageMatrix));
       });
     }
@@ -115,7 +116,7 @@ export class BookScene {
 
   private _createPage(i: number, textureLoader: THREE.TextureLoader): THREE.Group {
     const pivot = new THREE.Group();
-    const geometry = this._createRoundedBoxGeometry(config.pageWidth, config.pageHeight, config.pageDepth, 0.1, 64);
+    const geometry = this._createRoundedBoxGeometry(config.pageWidth, config.pageHeight, config.pageDepth, 0.12, 64);
 
     const frontTexture = textureLoader.load(textures.pages[i]);
     frontTexture.repeat.set(0.5, 1);
@@ -128,11 +129,11 @@ export class BookScene {
 
     const pageMesh = new THREE.Mesh(geometry, [
       new THREE.MeshBasicMaterial({ map: frontTexture, }),
-      new THREE.MeshBasicMaterial({ map: backTexture, }),
       new THREE.MeshBasicMaterial({ map: frontTexture, }),
-      new THREE.MeshBasicMaterial({ map: backTexture, }),
-      new THREE.MeshBasicMaterial({ map: frontTexture, transparent: true }),
-      new THREE.MeshBasicMaterial({ map: backTexture, transparent: true }),
+      new THREE.MeshBasicMaterial({ map: frontTexture, }),
+      new THREE.MeshBasicMaterial({ map: frontTexture, }),
+      new THREE.MeshBasicMaterial({ map: frontTexture }),
+      new THREE.MeshBasicMaterial({ map: backTexture }),
     ]);
     pageMesh.position.x = config.pageWidth / 2;
     pivot.add(pageMesh);
@@ -153,11 +154,15 @@ export class BookScene {
     const placeholderGeom = new THREE.PlaneGeometry(1, 1);
 
     decorations.forEach((decConfig) => {
+      const scale = decConfig.scale ?? 1;
+
       const texture = textureLoader.load(decConfig.texture, (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
         const aspect = tex.image.width / tex.image.height;
-        const targetHeight = config.pageHeight * 0.75;
+
+        const targetHeight = config.pageHeight * 0.75 * scale;
         const targetWidth = targetHeight * aspect;
+
         front.geometry.dispose();
         front.geometry = new THREE.PlaneGeometry(targetWidth, targetHeight);
         back.geometry.dispose();
@@ -166,21 +171,40 @@ export class BookScene {
 
       const front = new THREE.Mesh(placeholderGeom.clone(), new THREE.MeshBasicMaterial({
         map: texture, alphaTest: 0.01, transparent: true,
-        clippingPlanes: [new THREE.Plane(new THREE.Vector3(-1, 0, 0), config.pageWidth), new THREE.Plane(new THREE.Vector3(1, 0, 0), 0)].map(p => p.clone())
+        clippingPlanes: [
+          new THREE.Plane(new THREE.Vector3(-1, 0, 0), config.pageWidth),
+          new THREE.Plane(new THREE.Vector3(1, 0, 0), 0),
+          new THREE.Plane(new THREE.Vector3(0, -1, 0), config.pageHeight / 2),
+          new THREE.Plane(new THREE.Vector3(0, 1, 0), config.pageHeight / 2)
+        ].map(p => p.clone())
       }));
-      front.position.set(-config.pageWidth, decConfig.offset.y || 0, z + decConfig.offset.z);
+      front.position.set(-config.pageWidth, decConfig.offset?.y || 0, z + (decConfig.offset?.z || 0));
 
       const back = new THREE.Mesh(placeholderGeom.clone(), new THREE.MeshBasicMaterial({
         map: texture, alphaTest: 0.01, transparent: true,
-        clippingPlanes: [new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0), new THREE.Plane(new THREE.Vector3(1, 0, 0), config.pageWidth)].map(p => p.clone())
+        clippingPlanes: [
+          new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0),
+          new THREE.Plane(new THREE.Vector3(1, 0, 0), config.pageWidth),
+          new THREE.Plane(new THREE.Vector3(0, -1, 0), config.pageHeight / 2),
+          new THREE.Plane(new THREE.Vector3(0, 1, 0), config.pageHeight / 2)
+        ].map(p => p.clone())
       }));
-      back.position.set(config.pageWidth, decConfig.offset.y || 0, z - decConfig.offset.z);
+      back.position.set(config.pageWidth, decConfig.offset?.y || 0, z - (decConfig.offset?.z || 0));
       back.rotation.y = Math.PI;
 
-      pairs.push({ front, back, ...decConfig, localClipPlanes: [new THREE.Plane(new THREE.Vector3(-1, 0, 0), config.pageWidth), new THREE.Plane(new THREE.Vector3(1, 0, 0), 0)] });
+      pairs.push({
+        front,
+        back,
+        ...decConfig,
+        localClipPlanes: [
+          new THREE.Plane(new THREE.Vector3(-1, 0, 0), config.pageWidth),
+          new THREE.Plane(new THREE.Vector3(1, 0, 0), 0)
+        ]
+      });
     });
     return pairs;
   }
+
 
   private _createRoundedBoxGeometry(width: number, height: number, depth: number, radius: number, segments: number): THREE.BoxGeometry {
     const geometry = new THREE.BoxGeometry(width, height, depth, segments, segments, segments);
