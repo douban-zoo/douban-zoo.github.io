@@ -38,12 +38,12 @@ export const textures = {
   decorations: [
     [],
     [
-      { texture: asset('imgs/dec/meidi1.png'), parallaxFactor: 0.35, offset: { x: 3.2, y: -0.12, z: 0.016 }, scale: 1.2 },
-      { texture: asset('imgs/dec/meidi2.png'), parallaxFactor: 0.20, offset: { x: 0.9, y: -0.35, z: 0.014 } },
+      { texture: asset('imgs/dec/meidi1.png'), parallaxFactor: 0.35, offset: { x: 3.2, y: -0.1, z: 0.016 }, scale: 1.22 },
+      { texture: asset('imgs/dec/meidi2.png'), parallaxFactor: 0.20, offset: { x: 0.9, y: -0.33, z: 0.014 } },
     ],
     [
-      { texture: asset('imgs/dec/jojo1.png'), parallaxFactor: 0.35, offset: { x: 2.73, y: -0.36, z: 0.014 } },
-      { texture: asset('imgs/dec/jojo2.png'), parallaxFactor: 0.2, offset: { x: 1.5, y: -0.2, z: 0.016 }, scale: 1.15 },
+      { texture: asset('imgs/dec/jojo1.png'), parallaxFactor: 0.35, offset: { x: 2.74, y: -0.05, z: 0.014 },scale: 1.28   },
+      { texture: asset('imgs/dec/jojo2.png'), parallaxFactor: 0.2, offset: { x: 1.5, y: -0.15, z: 0.016 }, scale: 1.2 },
     ],
     [
       { texture: asset('imgs/dec/pupu1.png'), parallaxFactor: 0.29, offset: { x: 2.2, y: -0.1, z: 0.014 }, scale: 1.2 },
