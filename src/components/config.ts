@@ -1,4 +1,19 @@
-import { scale } from "svelte/transition";
+
+export function getBaseUrl() {
+  try {
+    const lang = navigator.language || '';
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    const inCN = /^zh-CN/i.test(lang) || tz.includes('Shanghai') || tz.includes('Beijing');
+
+    return inCN
+      ? 'https://gcore.jsdelivr.net/gh/douban-zoo/douban-zoo.github.io@gh-pages/'
+      : import.meta.env.BASE_URL;
+  } catch {
+    return import.meta.env.BASE_URL;
+  }
+}
+
+export const asset = (path: string) => getBaseUrl() + path.replace(/^\/+/, '');
 
 export const config = {
   numPages: 6,
@@ -11,32 +26,32 @@ export const config = {
 };
 
 export const textures = {
-  normalMap: '/imgs/textures/paper-normal.jpg',
+  normalMap: asset('imgs/textures/paper-normal.jpg'),
   pages: [
-    '/imgs/bg/cover.png',
-    '/imgs/bg/meidi.png',
-    '/imgs/bg/jongjong.png',
-    '/imgs/bg/pupu.png',
-    '/imgs/bg/jongjong.png',
-    '/imgs/bg/meidi.png',
+    asset('imgs/bg/cover.png'),
+    asset('imgs/bg/meidi.png'),
+    asset('imgs/bg/jongjong.png'),
+    asset('imgs/bg/pupu.png'),
+    asset('imgs/bg/jongjong.png'),
+    asset('imgs/bg/meidi.png'),
   ],
   decorations: [
     [],
     [
-      { texture: '/imgs/dec/meidi1.png', parallaxFactor: 0.35, offset: { x: 3.2, y: -0.12, z: 0.016 }, scale: 1.2 },
-      { texture: '/imgs/dec/meidi2.png', parallaxFactor: 0.20, offset: { x: 0.9, y: -0.35, z: 0.014 }},
+      { texture: asset('imgs/dec/meidi1.png'), parallaxFactor: 0.35, offset: { x: 3.2, y: -0.12, z: 0.016 }, scale: 1.2 },
+      { texture: asset('imgs/dec/meidi2.png'), parallaxFactor: 0.20, offset: { x: 0.9, y: -0.35, z: 0.014 } },
     ],
     [
-      { texture: '/imgs/dec/jojo1.png', parallaxFactor: 0.35, offset: { x: 2.73, y: -0.36, z: 0.014 } },
-      { texture: '/imgs/dec/jojo2.png', parallaxFactor: 0.2, offset: { x: 1.5, y: -0.2, z: 0.016 },scale:1.15 },
+      { texture: asset('imgs/dec/jojo1.png'), parallaxFactor: 0.35, offset: { x: 2.73, y: -0.36, z: 0.014 } },
+      { texture: asset('imgs/dec/jojo2.png'), parallaxFactor: 0.2, offset: { x: 1.5, y: -0.2, z: 0.016 }, scale: 1.15 },
     ],
     [
-      { texture: '/imgs/dec/pupu1.png', parallaxFactor: 0.29, offset: { x: 2.2, y: -0.1, z: 0.014 }, scale: 1.2 },
-      { texture: '/imgs/dec/pupu2.png', parallaxFactor: 0.23, offset: { x: 1.4, y: 0.2, z: 0.016 }, scale: 0.9 },
+      { texture: asset('imgs/dec/pupu1.png'), parallaxFactor: 0.29, offset: { x: 2.2, y: -0.1, z: 0.014 }, scale: 1.2 },
+      { texture: asset('imgs/dec/pupu2.png'), parallaxFactor: 0.23, offset: { x: 1.4, y: 0.2, z: 0.016 }, scale: 0.9 },
     ],
     [
-      { texture: '/imgs/dec/jojo1.png', parallaxFactor: 0.35, offset: { x: 2.74, y: -0.36, z: 0.014 } },
-      { texture: '/imgs/dec/jojo2.png', parallaxFactor: 0.2, offset: { x: 1.5, y: -0.25, z: 0.016 } },
+      { texture: asset('imgs/dec/jojo1.png'), parallaxFactor: 0.35, offset: { x: 2.74, y: -0.36, z: 0.014 } },
+      { texture: asset('imgs/dec/jojo2.png'), parallaxFactor: 0.2, offset: { x: 1.5, y: -0.25, z: 0.016 } },
     ],
     [],
   ],

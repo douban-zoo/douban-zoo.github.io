@@ -4,7 +4,10 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // fast magic
+  // base:'https://gcore.jsdelivr.net/gh/douban-zoo/douban-zoo.github.io@gh-pages/',
   plugins: [
     tailwindcss(),
-    svelte()],
+    svelte()
+  ],
 })
