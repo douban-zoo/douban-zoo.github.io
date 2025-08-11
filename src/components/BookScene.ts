@@ -3,6 +3,7 @@ import * as dat from 'lil-gui';
 import { config, assets, palette } from './config';
 import gsap from 'gsap';
 import { playAudio } from '../utils/audios';
+import { VideoOverlayManager } from '../utils/video';
 
 type DecorationPair = {
   front: THREE.Mesh;
@@ -26,6 +27,9 @@ export class BookScene {
   private audioIcon?: THREE.Mesh;
   private raycaster = new THREE.Raycaster();
   private mouse = new THREE.Vector2();
+  private isPaused = false;
+  private videoOverlayManager: VideoOverlayManager;
+
 
   private readonly perSegment = 1 / config.numPages;
 
@@ -59,7 +63,19 @@ export class BookScene {
     this.handleResize();
 
     this.renderer.domElement.addEventListener('click', this._onIconClick.bind(this), false);
+    this.videoOverlayManager = new VideoOverlayManager(
+      () => this.pause(),
+      () => this.resume()
+    );
 
+  }
+
+  public pause() {
+    this.isPaused = true;
+  }
+
+  public resume() {
+    this.isPaused = false;
   }
 
   private setUpLight() {
@@ -182,9 +198,7 @@ export class BookScene {
     const color = colorLow.clone().lerp(colorHigh, lerpFactor);
 
     this.renderer.setClearColor(color);
-    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      document.body.style.backgroundColor = new THREE.Color(color).getStyle();
-    }
+    document.documentElement.style.setProperty('--bgColor', color.getStyle());
   }
   public handleResize() {
     const width = this.container.clientWidth;
@@ -419,10 +433,8 @@ export class BookScene {
       const clickedObject = intersects[0].object;
 
       if (clickedObject === this.videoIcon) {
-        console.log('Video icon clicked!');
-        // showVideoOverlay('path/to/your/video.mp4');
+        this.videoOverlayManager.show(assets.videos[this.currentPage.toString()] || '');
       } else if (clickedObject === this.audioIcon) {
-        console.log('Audio icon clicked!');
         playAudio(assets.audios[this.currentPage.toString()] || '',);
       }
     }

@@ -25,7 +25,6 @@ export const config = {
   snapDuration: 0.8,
   mediaPages: {
     '2': ['video', 'audio'],
-    // '4': ['audio'],        
   } as Record<string, ('video' | 'audio')[]>
 };
 
@@ -33,9 +32,12 @@ export const assets = {
   audios: {
     '2': asset('audios/jojo.mp3'),
   } as Record<string, string>,
+  videos: {
+    '2': asset('videos/jojo-play.mp4'),
+  } as Record<string, string>,
   icons: {
-    video: asset('imgs/icons/video.png'),
-    audio: asset('imgs/icons/audio.png'),
+    video: asset('icons/video.png'),
+    audio: asset('icons/audio.png'),
   },
   normalMap: asset('imgs/textures/paper-normal.png'),
   pages: [
