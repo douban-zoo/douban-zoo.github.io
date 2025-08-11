@@ -11,31 +11,32 @@ export const config = {
 };
 
 export const textures = {
+  normalMap: '/imgs/textures/paper-normal.jpg',
   pages: [
-    '/imgs/bg-cover.png',
-    '/imgs/bg-meidi.png',
-    '/imgs/bg-jongjong.png',
-    '/imgs/bg-pupu.png',
-    '/imgs/bg-jongjong.png',
-    '/imgs/bg-meidi.png',
+    '/imgs/bg/cover.png',
+    '/imgs/bg/meidi.png',
+    '/imgs/bg/jongjong.png',
+    '/imgs/bg/pupu.png',
+    '/imgs/bg/jongjong.png',
+    '/imgs/bg/meidi.png',
   ],
   decorations: [
     [],
     [
-      { texture: '/imgs/dec-meidi1.png', parallaxFactor: 0.35, offset: { x: 3.2, y: -0.12, z: 0.016 }, scale: 1.2 },
-      { texture: '/imgs/dec-meidi2.png', parallaxFactor: 0.20, offset: { x: 0.9, y: -0.35, z: 0.014 }},
+      { texture: '/imgs/dec/meidi1.png', parallaxFactor: 0.35, offset: { x: 3.2, y: -0.12, z: 0.016 }, scale: 1.2 },
+      { texture: '/imgs/dec/meidi2.png', parallaxFactor: 0.20, offset: { x: 0.9, y: -0.35, z: 0.014 }},
     ],
     [
-      { texture: '/imgs/dec-jojo1.png', parallaxFactor: 0.35, offset: { x: 2.73, y: -0.36, z: 0.014 } },
-      { texture: '/imgs/dec-jojo2.png', parallaxFactor: 0.2, offset: { x: 1.5, y: -0.2, z: 0.016 },scale:1.15 },
+      { texture: '/imgs/dec/jojo1.png', parallaxFactor: 0.35, offset: { x: 2.73, y: -0.36, z: 0.014 } },
+      { texture: '/imgs/dec/jojo2.png', parallaxFactor: 0.2, offset: { x: 1.5, y: -0.2, z: 0.016 },scale:1.15 },
     ],
     [
-      { texture: '/imgs/dec-pupu1.png', parallaxFactor: 0.29, offset: { x: 2.2, y: -0.1, z: 0.014 }, scale: 1.2 },
-      { texture: '/imgs/dec-pupu2.png', parallaxFactor: 0.23, offset: { x: 1.4, y: 0.2, z: 0.016 }, scale: 0.9 },
+      { texture: '/imgs/dec/pupu1.png', parallaxFactor: 0.29, offset: { x: 2.2, y: -0.1, z: 0.014 }, scale: 1.2 },
+      { texture: '/imgs/dec/pupu2.png', parallaxFactor: 0.23, offset: { x: 1.4, y: 0.2, z: 0.016 }, scale: 0.9 },
     ],
     [
-      { texture: '/imgs/dec-jojo1.png', parallaxFactor: 0.35, offset: { x: 2.74, y: -0.36, z: 0.014 } },
-      { texture: '/imgs/dec-jojo2.png', parallaxFactor: 0.2, offset: { x: 1.5, y: -0.25, z: 0.016 } },
+      { texture: '/imgs/dec/jojo1.png', parallaxFactor: 0.35, offset: { x: 2.74, y: -0.36, z: 0.014 } },
+      { texture: '/imgs/dec/jojo2.png', parallaxFactor: 0.2, offset: { x: 1.5, y: -0.25, z: 0.016 } },
     ],
     [],
   ],

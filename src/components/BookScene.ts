@@ -1,5 +1,5 @@
-
 import * as THREE from 'three';
+import * as dat from 'lil-gui';
 import { config, textures } from './config';
 
 type DecorationPair = {
@@ -17,6 +17,9 @@ export class BookScene {
   private renderer: THREE.WebGLRenderer;
   private pages: THREE.Group[] = [];
   private decorationPairs: DecorationPair[][] = [];
+  private ambientLight: THREE.AmbientLight = new THREE.AmbientLight(0xffffff, 1);
+  private directionalLights: THREE.DirectionalLight[] = [];
+  private gui: dat.GUI;
 
   constructor (container: HTMLDivElement) {
     this.container = container;
@@ -35,6 +38,48 @@ export class BookScene {
     this.renderer.localClippingEnabled = true;
 
     this.container.appendChild(this.renderer.domElement);
+
+    this.setUpLight();
+
+    this.gui = new dat.GUI({ autoPlace: true });
+    this.setupLightControls();
+  }
+
+  private setUpLight() {
+    this.scene.add(this.ambientLight);
+
+    const leftLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    leftLight.position.set(-5, 5, 5);
+    this.scene.add(leftLight);
+    this.directionalLights = [leftLight];
+
+    const rightLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    rightLight.position.set(5, 5, 5);
+    this.scene.add(rightLight);
+    this.directionalLights.push(rightLight);
+  }
+
+  private setupLightControls() {
+    const lightFolder = this.gui.addFolder('Lighting');
+
+    const ambientFolder = lightFolder.addFolder('Ambient Light');
+    ambientFolder.addColor({ color: '#ffffff' }, 'color').onChange((value) => {
+      this.ambientLight.color.set(value);
+    });
+    ambientFolder.add(this.ambientLight, 'intensity', 0, 4, 0.01);
+
+    const directionalFolder = lightFolder.addFolder('Directional Lights');
+    this.directionalLights.forEach((light, index) => {
+      const folder = directionalFolder.addFolder(`Light ${ index + 1 }`);
+      folder.addColor({ color: '#ffffff' }, 'color').onChange((value) => {
+        light.color.set(value);
+      });
+      folder.add(light, 'intensity', 0, 4, 0.01);
+      folder.add(light.position, 'x', -10, 10, 0.1);
+      folder.add(light.position, 'y', -10, 10, 0.1);
+      folder.add(light.position, 'z', -10, 10, 0.1);
+    });
+
   }
 
   public async init() {
@@ -59,6 +104,7 @@ export class BookScene {
     const progressPerSegment = 1 / config.numPages;
     const pageRotations: number[] = [];
     const curPage = Math.floor(progress / progressPerSegment);
+
     for (let i = 0;i < config.numPages;i++) {
       const page = this.pages[i];
       const segmentStartProgress = i * progressPerSegment;
@@ -94,9 +140,6 @@ export class BookScene {
         const parallaxShift = totalInfluence * config.pageWidth * pair.parallaxFactor;
         pair.front.position.x = pair.offset.x + parallaxShift;
         pair.back.position.x = -pair.offset.x - parallaxShift;
-
-        // const pageMatrix = this.pages[i].matrixWorld.clone();
-        // pair.front.material.clippingPlanes = pair.localClipPlanes.map((plane) => plane.clone().applyMatrix4(pageMatrix));
       });
     }
   }
@@ -112,6 +155,7 @@ export class BookScene {
     if (this.renderer.domElement && this.container.contains(this.renderer.domElement)) {
       this.container.removeChild(this.renderer.domElement);
     }
+    this.gui.destroy();
   }
 
   private _createPage(i: number, textureLoader: THREE.TextureLoader): THREE.Group {
@@ -127,13 +171,22 @@ export class BookScene {
     backTexture.colorSpace = THREE.SRGBColorSpace;
     backTexture.repeat.set(0.5, 1);
 
+    // const normalTexture = textureLoader.load(textures.normalMap);
+
+    // const materialConfig = {
+    //   roughness: 0.3,
+    //   metalness: 0.2,
+    //   normalMap: normalTexture,
+    //   normalScale: new THREE.Vector2(1, 3)
+    // };
+
     const pageMesh = new THREE.Mesh(geometry, [
-      new THREE.MeshBasicMaterial({ map: frontTexture, }),
-      new THREE.MeshBasicMaterial({ map: frontTexture, }),
-      new THREE.MeshBasicMaterial({ map: frontTexture, }),
-      new THREE.MeshBasicMaterial({ map: frontTexture, }),
-      new THREE.MeshBasicMaterial({ map: frontTexture }),
-      new THREE.MeshBasicMaterial({ map: backTexture }),
+      new THREE.MeshStandardMaterial({ map: frontTexture }),
+      new THREE.MeshStandardMaterial({ map: backTexture }),
+      new THREE.MeshStandardMaterial({ map: frontTexture }),
+      new THREE.MeshStandardMaterial({ map: backTexture }),
+      new THREE.MeshStandardMaterial({ map: frontTexture }),
+      new THREE.MeshStandardMaterial({ map: backTexture }),
     ]);
     pageMesh.position.x = config.pageWidth / 2;
     pivot.add(pageMesh);
@@ -169,8 +222,10 @@ export class BookScene {
         back.geometry = new THREE.PlaneGeometry(targetWidth, targetHeight);
       });
 
-      const front = new THREE.Mesh(placeholderGeom.clone(), new THREE.MeshBasicMaterial({
-        map: texture, alphaTest: 0.01, transparent: true,
+      const front = new THREE.Mesh(placeholderGeom.clone(), new THREE.MeshStandardMaterial({
+        map: texture,
+        alphaTest: 0.01,
+        transparent: true,
         clippingPlanes: [
           new THREE.Plane(new THREE.Vector3(-1, 0, 0), config.pageWidth),
           new THREE.Plane(new THREE.Vector3(1, 0, 0), 0),
@@ -180,8 +235,10 @@ export class BookScene {
       }));
       front.position.set(-config.pageWidth, decConfig.offset?.y || 0, z + (decConfig.offset?.z || 0));
 
-      const back = new THREE.Mesh(placeholderGeom.clone(), new THREE.MeshBasicMaterial({
-        map: texture, alphaTest: 0.01, transparent: true,
+      const back = new THREE.Mesh(placeholderGeom.clone(), new THREE.MeshStandardMaterial({
+        map: texture,
+        alphaTest: 0.01,
+        transparent: true,
         clippingPlanes: [
           new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0),
           new THREE.Plane(new THREE.Vector3(1, 0, 0), config.pageWidth),
@@ -205,10 +262,8 @@ export class BookScene {
     return pairs;
   }
 
-
   private _createRoundedBoxGeometry(width: number, height: number, depth: number, radius: number, segments: number): THREE.BoxGeometry {
     const geometry = new THREE.BoxGeometry(width, height, depth, segments, segments, segments);
-
     const position = geometry.attributes.position;
     const vertex = new THREE.Vector3();
 
@@ -217,12 +272,9 @@ export class BookScene {
 
     for (let i = 0;i < position.count;i++) {
       vertex.fromBufferAttribute(position, i);
-
       if (vertex.x > innerWidth && Math.abs(vertex.y) > innerHeight) {
         const cornerCenter = new THREE.Vector3(innerWidth, Math.sign(vertex.y) * innerHeight, vertex.z);
-
         const offset = new THREE.Vector3().subVectors(vertex, cornerCenter);
-
         if (offset.length() > radius) {
           offset.setLength(radius);
           const newPos = cornerCenter.add(offset);
