@@ -59,11 +59,11 @@ export const textures = {
 
 export const palette = {
   bg: [
-    '#ECDDA1',
-    '#CC6DAE',
-    '#95C1E6',
-    '#008C9A',
-    '#95C1E6',
-    '#863F7E',
+    '#52AC6A',
+    '#F4CEE8',
+    '#A2D5FF',
+    '#1CB8C7',
+    '#A2D5FF',
+    '#F4CEE8',
   ]
 }

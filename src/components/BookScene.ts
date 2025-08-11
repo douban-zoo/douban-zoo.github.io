@@ -52,10 +52,10 @@ export class BookScene {
   private setUpLight() {
     this.scene.add(this.ambientLight);
 
-    const rightLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    rightLight.position.set(0.2, 0, 5);
-    this.scene.add(rightLight);
-    this.directionalLights.push(rightLight);
+    const light = new THREE.DirectionalLight(0xffffff, 0.5);
+    light.position.set(0, 0, 5);
+    this.scene.add(light);
+    this.directionalLights.push(light);
   }
 
   private setupLightControls() {
@@ -105,8 +105,6 @@ export class BookScene {
 
     const progressPerSegment = 1 / config.numPages;
     const pageRotations: number[] = [];
-    // const curPage = Math.floor(progress / progressPerSegment);
-
 
     for (let i = 0;i < config.numPages;i++) {
       const page = this.pages[i];
@@ -161,8 +159,12 @@ export class BookScene {
     const colorLow = new THREE.Color(palette.bg[low]);
     const colorHigh = new THREE.Color(palette.bg[hight]);
 
-    this.renderer.setClearColor(colorLow.clone().lerp(colorHigh, lerpFactor));
+    const color = colorLow.clone().lerp(colorHigh, lerpFactor);
 
+    this.renderer.setClearColor(color);
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      document.body.style.backgroundColor = new THREE.Color(color).getStyle();
+    }
   }
   public handleResize() {
     const width = this.container.clientWidth;
@@ -171,7 +173,7 @@ export class BookScene {
     this.renderer.setSize(width, height);
     this.camera.aspect = width / height;
 
-    const widthPercentage = 0.9;
+    const widthPercentage = 0.95;
 
     const visibleWidth = config.pageWidth * 2 / widthPercentage;
     const fovInRadians = this.camera.fov * (Math.PI / 180);
@@ -181,6 +183,7 @@ export class BookScene {
 
     const minCameraDistance = 6;
     this.camera.position.z = Math.max(cameraZ, minCameraDistance);
+    this.camera.position.y = height < width ? 0 : -0.25 * (visibleHeight - config.pageHeight);
 
     this.camera.updateProjectionMatrix();
   }
@@ -279,7 +282,7 @@ export class BookScene {
         transparent: true,
         clippingPlanes: [
           new THREE.Plane(new THREE.Vector3(-1, 0, 0), config.pageWidth - 0.015),
-          new THREE.Plane(new THREE.Vector3(1, 0, 0), 0),
+          new THREE.Plane(new THREE.Vector3(1, 0, 0), -0.025),
           new THREE.Plane(new THREE.Vector3(0, -1, 0), config.pageHeight / 2),
           new THREE.Plane(new THREE.Vector3(0, 1, 0), config.pageHeight / 2)
         ].map(p => p.clone())
@@ -291,7 +294,7 @@ export class BookScene {
         alphaTest: 0.01,
         transparent: true,
         clippingPlanes: [
-          new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0),
+          new THREE.Plane(new THREE.Vector3(-1, 0, 0), -0.025),
           new THREE.Plane(new THREE.Vector3(1, 0, 0), config.pageWidth - 0.015),
           new THREE.Plane(new THREE.Vector3(0, -1, 0), config.pageHeight / 2),
           new THREE.Plane(new THREE.Vector3(0, 1, 0), config.pageHeight / 2)
