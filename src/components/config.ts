@@ -22,11 +22,11 @@ export const config = {
   pageDepth: 0.02,
   rotationStep: 0.01,
   dragSensitivity: 0.15,
-  snapDuration: 0.8,
+  snapDuration: 1,
 };
 
 export const textures = {
-  normalMap: asset('imgs/textures/paper-normal.jpg'),
+  normalMap: asset('imgs/textures/paper-normal.png'),
   pages: [
     asset('imgs/bg/cover.png'),
     asset('imgs/bg/meidi.png'),

@@ -94,8 +94,8 @@
     progressTween.value = globalProgress;
     gsap.to(progressTween, {
       value: targetProgress,
-      duration: config.snapDuration + Math.abs(pageDelta) * 0.5,
-      ease: 'power2.out',
+      duration: config.snapDuration + Math.abs(pageDelta),
+      ease: 'power3.out',
       onUpdate: () => {
         updateScene(progressTween.value);
       },
