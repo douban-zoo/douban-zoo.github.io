@@ -42,7 +42,7 @@ export const textures = {
       { texture: asset('imgs/dec/meidi2.png'), parallaxFactor: 0.20, offset: { x: 0.9, y: -0.33, z: 0.014 } },
     ],
     [
-      { texture: asset('imgs/dec/jojo1.png'), parallaxFactor: 0.35, offset: { x: 2.74, y: -0.05, z: 0.014 },scale: 1.28   },
+      { texture: asset('imgs/dec/jojo1.png'), parallaxFactor: 0.35, offset: { x: 2.74, y: -0.05, z: 0.014 }, scale: 1.28 },
       { texture: asset('imgs/dec/jojo2.png'), parallaxFactor: 0.2, offset: { x: 1.5, y: -0.15, z: 0.016 }, scale: 1.2 },
     ],
     [
@@ -56,3 +56,14 @@ export const textures = {
     [],
   ],
 };
+
+export const palette = {
+  bg: [
+    '#ECDDA1',
+    '#CC6DAE',
+    '#95C1E6',
+    '#008C9A',
+    '#95C1E6',
+    '#863F7E',
+  ]
+}

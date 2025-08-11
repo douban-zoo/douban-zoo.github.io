@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import * as dat from 'lil-gui';
-import { config, textures } from './config';
+import { config, textures, palette } from './config';
 
 type DecorationPair = {
   front: THREE.Mesh;
@@ -16,9 +16,12 @@ export class BookScene {
   private renderer: THREE.WebGLRenderer;
   private pages: THREE.Group[] = [];
   private decorationPairs: DecorationPair[][] = [];
-  private ambientLight: THREE.AmbientLight = new THREE.AmbientLight(0xffffff, 1.5);
+  private ambientLight: THREE.AmbientLight = new THREE.AmbientLight(0xffffff, 1.8);
   private directionalLights: THREE.DirectionalLight[] = [];
   private gui: dat.GUI;
+
+  private lastBgUpdate = 0;
+
 
   constructor (container: HTMLDivElement) {
     this.container = container;
@@ -29,19 +32,21 @@ export class BookScene {
     this.camera.lookAt(0, 0, 0);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: false });
-
     const maxPixelRatio = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? 3 : 2;
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
+
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.toneMapping = THREE.NoToneMapping;
     this.renderer.localClippingEnabled = true;
 
+    this.renderer.setClearColor(palette.bg[0]);
     this.container.appendChild(this.renderer.domElement);
 
     this.setUpLight();
+    // this.setupLightControls();
 
-    this.gui = new dat.GUI({ autoPlace: true });
-    this.setupLightControls();
+    window.addEventListener('resize', () => this.handleResize());
+    this.handleResize();
   }
 
   private setUpLight() {
@@ -54,6 +59,7 @@ export class BookScene {
   }
 
   private setupLightControls() {
+    this.gui = new dat.GUI({ autoPlace: true });
     const lightFolder = this.gui.addFolder('Lighting');
 
     const ambientFolder = lightFolder.addFolder('Ambient Light');
@@ -73,7 +79,6 @@ export class BookScene {
       folder.add(light.position, 'y', -10, 50, 0.1);
       folder.add(light.position, 'z', -10, 50, 0.1);
     });
-
   }
 
   public async init() {
@@ -95,9 +100,13 @@ export class BookScene {
 
   public update(progress: number) {
     if (!this.pages.length) return;
+    this.updateBgColor(progress);
+
+
     const progressPerSegment = 1 / config.numPages;
     const pageRotations: number[] = [];
-    const curPage = Math.floor(progress / progressPerSegment);
+    // const curPage = Math.floor(progress / progressPerSegment);
+
 
     for (let i = 0;i < config.numPages;i++) {
       const page = this.pages[i];
@@ -111,7 +120,6 @@ export class BookScene {
       const pageStartProgress = (i - 2) * progressPerSegment;
       const pageEndProgress = (i + 2) * progressPerSegment;
       page.visible = progress > pageStartProgress && progress < pageEndProgress;
-      page.renderOrder = Math.abs(curPage - i);
 
       const decs = this.decorationPairs[i];
       if (!decs || decs.length === 0) continue;
@@ -120,11 +128,12 @@ export class BookScene {
       const spreadEndProgress = (i + 0.75) * progressPerSegment;
       const isVisible = progress > spreadStartProgress && progress < spreadEndProgress;
 
-      const leftRotation = pageRotations[i - 1] || 0;
-      const influenceFromLeft = leftRotation + Math.PI;
-      const rightRotation = pageRotations[i];
-      const influenceFromRight = rightRotation;
-      const totalInfluence = influenceFromLeft + influenceFromRight - Math.PI;
+      const leftR = pageRotations[i - 1] || 0;
+      const influenceL = leftR + Math.PI;
+
+      const rightR = pageRotations[i];
+      const influenceR = rightR;
+      const totalInfluence = influenceL + influenceR - Math.PI;
 
       decs.forEach((pair) => {
         pair.front.visible = isVisible;
@@ -137,11 +146,43 @@ export class BookScene {
       });
     }
   }
+  private updateBgColor(progress: number) {
+    const now = performance.now();
+    if (now - this.lastBgUpdate < 16) return;
 
+    this.lastBgUpdate = now;
+
+    const numColors = palette.bg.length;
+    const sProgress = progress * numColors;
+    const low = Math.floor(sProgress) % numColors;
+    const hight = (low + 1) % numColors;
+    const lerpFactor = sProgress - Math.floor(sProgress);
+
+    const colorLow = new THREE.Color(palette.bg[low]);
+    const colorHigh = new THREE.Color(palette.bg[hight]);
+
+    this.renderer.setClearColor(colorLow.clone().lerp(colorHigh, lerpFactor));
+
+  }
   public handleResize() {
-    this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+
+    this.renderer.setSize(width, height);
+    this.camera.aspect = width / height;
+
+    const widthPercentage = 0.9;
+
+    const visibleWidth = config.pageWidth * 2 / widthPercentage;
+    const fovInRadians = this.camera.fov * (Math.PI / 180);
+
+    const visibleHeight = visibleWidth / this.camera.aspect;
+    let cameraZ = visibleHeight / (2 * Math.tan(fovInRadians / 2));
+
+    const minCameraDistance = 6;
+    this.camera.position.z = Math.max(cameraZ, minCameraDistance);
+
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
   }
 
   public dispose() {
@@ -159,7 +200,6 @@ export class BookScene {
     (this.scene as any) = null;
     (this.camera as any) = null;
   }
-
 
   private _createPage(i: number, textureLoader: THREE.TextureLoader): THREE.Group {
     const pivot = new THREE.Group();
