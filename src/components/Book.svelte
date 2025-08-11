@@ -105,7 +105,6 @@
 
 <div
   bind:this={container}
-  
   class="cursor-grab touch-none w-[100vw] h-[100vh]"
   on:pointerdown={onPointerDown}
   on:pointermove={onPointerMove}

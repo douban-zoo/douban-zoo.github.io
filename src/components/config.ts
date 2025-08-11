@@ -22,10 +22,21 @@ export const config = {
   pageDepth: 0.02,
   rotationStep: 0.01,
   dragSensitivity: 0.15,
-  snapDuration: 1,
+  snapDuration: 0.8,
+  mediaPages: {
+    '2': ['video', 'audio'],
+    // '4': ['audio'],        
+  } as Record<string, ('video' | 'audio')[]>
 };
 
-export const textures = {
+export const assets = {
+  audios: {
+    '2': asset('audios/jojo.mp3'),
+  } as Record<string, string>,
+  icons: {
+    video: asset('imgs/icons/video.png'),
+    audio: asset('imgs/icons/audio.png'),
+  },
   normalMap: asset('imgs/textures/paper-normal.png'),
   pages: [
     asset('imgs/bg/cover.png'),

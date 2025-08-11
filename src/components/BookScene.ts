@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import * as dat from 'lil-gui';
-import { config, textures, palette } from './config';
+import { config, assets, palette } from './config';
+import gsap from 'gsap';
+import { playAudio } from '../utils/audios';
 
 type DecorationPair = {
   front: THREE.Mesh;
@@ -20,6 +22,14 @@ export class BookScene {
   private directionalLights: THREE.DirectionalLight[] = [];
   private gui: dat.GUI;
 
+  private videoIcon?: THREE.Mesh;
+  private audioIcon?: THREE.Mesh;
+  private raycaster = new THREE.Raycaster();
+  private mouse = new THREE.Vector2();
+
+  private readonly perSegment = 1 / config.numPages;
+
+  private currentPage = 0;
   private lastBgUpdate = 0;
 
 
@@ -47,6 +57,9 @@ export class BookScene {
 
     window.addEventListener('resize', () => this.handleResize());
     this.handleResize();
+
+    this.renderer.domElement.addEventListener('click', this._onIconClick.bind(this), false);
+
   }
 
   private setUpLight() {
@@ -83,7 +96,7 @@ export class BookScene {
 
   public async init() {
     const textureLoader = new THREE.TextureLoader();
-    const loadPromises = textures.pages.map((url) => new Promise((resolve) => textureLoader.load(url, resolve)));
+    const loadPromises = assets.pages.map((url) => new Promise((resolve) => textureLoader.load(url, resolve)));
     await Promise.all(loadPromises);
 
     for (let i = 0;i < config.numPages;i++) {
@@ -91,6 +104,8 @@ export class BookScene {
       this.scene.add(page);
       this.pages.push(page);
     }
+
+    this._createMediaIcons(textureLoader);
     this.update(0);
   }
 
@@ -103,27 +118,29 @@ export class BookScene {
     this.updateBgColor(progress);
 
 
-    const progressPerSegment = 1 / config.numPages;
+    const perSegment = this.perSegment;
     const pageRotations: number[] = [];
+
+    this.currentPage = Math.round(progress / perSegment);
 
     for (let i = 0;i < config.numPages;i++) {
       const page = this.pages[i];
-      const segmentStartProgress = i * progressPerSegment;
-      const flipProgress = Math.max(0, Math.min(1, (progress - segmentStartProgress) / progressPerSegment));
+      const segmentStartProgress = i * perSegment;
+      const flipProgress = Math.max(0, Math.min(1, (progress - segmentStartProgress) / perSegment));
       const flipRotation = -flipProgress * Math.PI;
 
       page.rotation.y = i * config.rotationStep + flipRotation;
       pageRotations.push(flipRotation);
 
-      const pageStartProgress = (i - 2) * progressPerSegment;
-      const pageEndProgress = (i + 2) * progressPerSegment;
+      const pageStartProgress = (i - 2) * perSegment;
+      const pageEndProgress = (i + 2) * perSegment;
       page.visible = progress > pageStartProgress && progress < pageEndProgress;
 
       const decs = this.decorationPairs[i];
       if (!decs || decs.length === 0) continue;
 
-      const spreadStartProgress = (i - 0.75) * progressPerSegment;
-      const spreadEndProgress = (i + 0.75) * progressPerSegment;
+      const spreadStartProgress = (i - 0.75) * perSegment;
+      const spreadEndProgress = (i + 0.75) * perSegment;
       const isVisible = progress > spreadStartProgress && progress < spreadEndProgress;
 
       const leftR = pageRotations[i - 1] || 0;
@@ -143,6 +160,9 @@ export class BookScene {
         pair.back.position.x = -pair.offset.x - parallaxShift;
       });
     }
+
+    this.updateIcons();
+
   }
   private updateBgColor(progress: number) {
     const now = performance.now();
@@ -208,20 +228,20 @@ export class BookScene {
     const pivot = new THREE.Group();
     const geometry = this._createRoundedBoxGeometry(config.pageWidth, config.pageHeight, config.pageDepth, 0.12, 64);
 
-    const frontTexture = textureLoader.load(textures.pages[i]);
+    const frontTexture = textureLoader.load(assets.pages[i]);
     frontTexture.repeat.set(0.5, 1);
     frontTexture.offset.set(0.5, 0);
     frontTexture.colorSpace = THREE.SRGBColorSpace;
 
-    const backTexture = textureLoader.load(textures.pages[(i + 1) % config.numPages]);
+    const backTexture = textureLoader.load(assets.pages[(i + 1) % config.numPages]);
     backTexture.colorSpace = THREE.SRGBColorSpace;
     backTexture.repeat.set(0.5, 1);
 
-    const fNormalTexture = textureLoader.load(textures.normalMap);
+    const fNormalTexture = textureLoader.load(assets.normalMap);
     fNormalTexture.repeat.set(0.5, 1);
     fNormalTexture.offset.set(0.5, 0);
 
-    const bNormalTexture = textureLoader.load(textures.normalMap);
+    const bNormalTexture = textureLoader.load(assets.normalMap);
     bNormalTexture.repeat.set(0.5, 1);
 
     const fMaterialConfig = {
@@ -256,7 +276,7 @@ export class BookScene {
   }
 
   private _createDecorations(i: number, textureLoader: THREE.TextureLoader, z: number): DecorationPair[] {
-    const decorations = textures.decorations[i] || [];
+    const decorations = assets.decorations[i] || [];
     const pairs: DecorationPair[] = [];
     const placeholderGeom = new THREE.PlaneGeometry(1, 1);
 
@@ -335,5 +355,76 @@ export class BookScene {
 
     geometry.computeVertexNormals();
     return geometry;
+  }
+
+  private _createMediaIcons(textureLoader: THREE.TextureLoader) {
+    const iconSize = 0.3;
+    const iconGeometry = new THREE.PlaneGeometry(iconSize, iconSize);
+
+    const videoTexture = textureLoader.load(assets.icons.video);
+    videoTexture.colorSpace = THREE.SRGBColorSpace;
+    const videoMaterial = new THREE.MeshBasicMaterial({
+      map: videoTexture,
+      transparent: true,
+      opacity: 0,
+    });
+    this.videoIcon = new THREE.Mesh(iconGeometry, videoMaterial);
+    this.videoIcon.position.set(-config.pageWidth - 0.3, 0.7, 0);
+    this.scene.add(this.videoIcon);
+
+    const audioTexture = textureLoader.load(assets.icons.audio);
+    audioTexture.colorSpace = THREE.SRGBColorSpace;
+    const audioMaterial = new THREE.MeshBasicMaterial({
+      map: audioTexture,
+      transparent: true,
+      opacity: 0,
+    });
+    this.audioIcon = new THREE.Mesh(iconGeometry.clone(), audioMaterial);
+    this.audioIcon.position.set(-config.pageWidth - 0.3, 0.3, 0);
+    this.scene.add(this.audioIcon);
+  }
+
+  private updateIcons() {
+    if (!this.videoIcon || !this.audioIcon) return;
+
+    const mediaToShow = config.mediaPages[this.currentPage] || [];
+
+    gsap.to(this.videoIcon.material, {
+      duration: 0.05,
+      delay: 0.05,
+      opacity: mediaToShow.includes('video') ? 1 : 0,
+      ease: 'power2.inOut',
+    });
+    gsap.to(this.audioIcon.material, {
+      duration: 0.05,
+      delay: 0.05,
+      opacity: mediaToShow.includes('audio') ? 1 : 0,
+      ease: 'power2.inOut',
+    });
+
+  }
+
+  private _onIconClick(event: MouseEvent) {
+    this.mouse.x = (event.clientX / this.container.clientWidth) * 2 - 1;
+    this.mouse.y = -(event.clientY / this.container.clientHeight) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+
+    const icons = [this.videoIcon, this.audioIcon].filter(icon => icon?.visible) as THREE.Mesh[];
+    if (icons.length === 0) return;
+
+    const intersects = this.raycaster.intersectObjects(icons);
+
+    if (intersects.length > 0) {
+      const clickedObject = intersects[0].object;
+
+      if (clickedObject === this.videoIcon) {
+        console.log('Video icon clicked!');
+        // showVideoOverlay('path/to/your/video.mp4');
+      } else if (clickedObject === this.audioIcon) {
+        console.log('Audio icon clicked!');
+        playAudio(assets.audios[this.currentPage.toString()] || '',);
+      }
+    }
   }
 }
