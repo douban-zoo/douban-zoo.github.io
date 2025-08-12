@@ -152,7 +152,7 @@ export class BookScene {
     const pProgress = progress / perSegment;
 
     if (progress < perSegment) {
-      this.camera.position.x =THREE.MathUtils.lerp(config.pageWidth / 2, 0, pProgress);
+      this.camera.position.x = THREE.MathUtils.lerp(config.pageWidth / 2, 0, pProgress);
 
       if (this.isMobile) {
         this.camera.position.z = THREE.MathUtils.lerp(this.closedCameraZ, this.normalCameraZ, pProgress);
@@ -177,8 +177,8 @@ export class BookScene {
       const decs = this.decorationPairs[i];
       if (!decs || decs.length === 0) continue;
 
-      const spreadStartProgress = (i - 0.75) * perSegment;
-      const spreadEndProgress = (i + 0.75) * perSegment;
+      const spreadStartProgress = (i - 0.8) * perSegment;
+      const spreadEndProgress = (i + 0.8) * perSegment;
       const isVisible = progress > spreadStartProgress && progress < spreadEndProgress;
 
       const leftR = pageRotations[i - 1] || 0;
@@ -281,11 +281,14 @@ export class BookScene {
     backTexture.colorSpace = THREE.SRGBColorSpace;
     backTexture.repeat.set(0.5, 1);
 
-    const fNormalTexture = textureLoader.load(assets.normalMap);
+    const coverNormal = textureLoader.load(assets.normalMap.cover);
+    const paperNormal = textureLoader.load(assets.normalMap.paper);
+
+    const fNormalTexture = i === 0 ? coverNormal : paperNormal.clone();
     fNormalTexture.repeat.set(0.5, 1);
     fNormalTexture.offset.set(0.5, 0);
 
-    const bNormalTexture = textureLoader.load(assets.normalMap);
+    const bNormalTexture = i === config.numPages - 1 ? coverNormal : paperNormal.clone();
     bNormalTexture.repeat.set(0.5, 1);
 
     const fMaterialConfig = {
@@ -416,6 +419,7 @@ export class BookScene {
       transparent: true,
       opacity: 0,
     });
+
     this.videoIcon = new THREE.Mesh(iconGeometry, videoMaterial);
     this.videoIcon.position.set(-config.pageWidth - 0.3, 0.7, 0);
     this.scene.add(this.videoIcon);
@@ -427,6 +431,7 @@ export class BookScene {
       transparent: true,
       opacity: 0,
     });
+
     this.audioIcon = new THREE.Mesh(iconGeometry.clone(), audioMaterial);
     this.audioIcon.position.set(-config.pageWidth - 0.3, 0.3, 0);
     this.scene.add(this.audioIcon);

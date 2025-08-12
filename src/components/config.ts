@@ -1,3 +1,4 @@
+import { scale } from "svelte/transition";
 
 export function getBaseUrl() {
   try {
@@ -25,21 +26,28 @@ export const config = {
   snapDuration: 0.8,
   mediaPages: {
     '2': ['video', 'audio'],
+    '3': ['video', 'audio'],
   } as Record<string, ('video' | 'audio')[]>
 };
 
 export const assets = {
   audios: {
-    '2': asset('audios/jojo.mp3'),
+    '2': asset('audios/jojo.m4a'),
+    '3': asset('audios/pupu.m4a'),
   } as Record<string, string>,
   videos: {
     '2': asset('videos/jojo-play.mp4'),
+    '3': asset('videos/pupu-daze.mp4'),
   } as Record<string, string>,
   icons: {
     video: asset('icons/video.png'),
     audio: asset('icons/audio.png'),
+    folder: asset('icons/folder.png'),
   },
-  normalMap: asset('imgs/textures/paper-normal.png'),
+  normalMap: {
+    cover: asset('imgs/textures/cover-normal.png'),
+    paper: asset('imgs/textures/paper-normal.png'),
+  },
   pages: [
     asset('imgs/bg/cover.png'),
     asset('imgs/bg/meidi.png'),
@@ -51,8 +59,9 @@ export const assets = {
   decorations: [
     [],
     [
-      { texture: asset('imgs/dec/meidi1.png'), parallaxFactor: 0.35, offset: { x: 3.2, y: -0.1, z: 0.016 }, scale: 1.22 },
-      { texture: asset('imgs/dec/meidi2.png'), parallaxFactor: 0.20, offset: { x: 0.9, y: -0.33, z: 0.014 } },
+      { texture: asset('imgs/dec/meidi1.png'), parallaxFactor: 0.2, offset: { x: 2, y: -0.1, z: 0.016 }, scale: 1.22 },
+      { texture: asset('imgs/dec/meidi2.png'), parallaxFactor: 0.1, offset: { x: 0.1, y: -0.3, z: 0.015 }, scale: 1.08 },
+      { texture: asset('imgs/dec/meidi3.png'), parallaxFactor: 0.35, offset: { x: 3.4, y: 0.5, z: 0.014 }, scale: 0.75 },
     ],
     [
       { texture: asset('imgs/dec/jojo1.png'), parallaxFactor: 0.35, offset: { x: 2.74, y: -0.05, z: 0.014 }, scale: 1.28 },
