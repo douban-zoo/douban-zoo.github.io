@@ -43,7 +43,6 @@
       <video
         class="w-[80%] md:w-[60%] mt-2 h-auto block mx-auto rounded-xl"
         playsinline
-        muted
         loop
         autoplay
       ></video>

@@ -58,9 +58,8 @@ export const assets = {
   decorations: [
     [],
     [
-      { texture: asset('imgs/dec/meidi1.png'), parallaxFactor: 0.2, offset: { x: 2, y: -0.1, z: 0.016 }, scale: 1.22 },
-      { texture: asset('imgs/dec/meidi2.png'), parallaxFactor: 0.1, offset: { x: 0.1, y: -0.3, z: 0.015 }, scale: 1.08 },
-      { texture: asset('imgs/dec/meidi3.png'), parallaxFactor: 0.35, offset: { x: 3.4, y: 0.5, z: 0.014 }, scale: 0.75 },
+      { texture: asset('imgs/dec/meidi1.png'), parallaxFactor: 0.2, offset: { x: 2, y: -0.1, z: 0.016 }, scale: 1.25 },
+      { texture: asset('imgs/dec/meidi2.png'), parallaxFactor: 0.1, offset: { x: 0.8, y: -0.1, z: 0.015 }, scale: 1.2 },
     ],
     [
       { texture: asset('imgs/dec/jojo1.png'), parallaxFactor: 0.35, offset: { x: 2.76, y: -0.05, z: 0.014 }, scale: 1.28 },
