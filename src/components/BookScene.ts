@@ -17,6 +17,8 @@ export class BookScene {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
+
+  private book: THREE.Group = new THREE.Group();
   private pages: THREE.Group[] = [];
   private decorationPairs: DecorationPair[][] = [];
   private ambientLight: THREE.AmbientLight = new THREE.AmbientLight(0xffffff, 1.8);
@@ -36,18 +38,25 @@ export class BookScene {
   private currentPage = 0;
   private lastBgUpdate = 0;
 
+  private isMobile: boolean;
+  private maxPixelRatio: number = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? 3 : 2;
+  private normalCameraZ: number = 6;
+  private closedCameraZ: number = 4;
 
   constructor (container: HTMLDivElement) {
     this.container = container;
+    this.isMobile = container.clientWidth < 448;
 
     this.scene = new THREE.Scene();
+    this.scene.add(this.book);
+
     this.camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-    this.camera.position.set(0, 0, 6);
+    // this.camera.position.set(0, 0, 6);
     this.camera.lookAt(0, 0, 0);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: false });
-    const maxPixelRatio = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? 3 : 2;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.maxPixelRatio));
+
 
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.toneMapping = THREE.NoToneMapping;
@@ -81,10 +90,15 @@ export class BookScene {
   private setUpLight() {
     this.scene.add(this.ambientLight);
 
-    const light = new THREE.DirectionalLight(0xffffff, 0.5);
-    light.position.set(0, 0, 5);
-    this.scene.add(light);
-    this.directionalLights.push(light);
+    const lLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    lLight.position.set(-5, 0, 8);
+    this.scene.add(lLight);
+    this.directionalLights.push(lLight);
+
+    const rLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    rLight.position.set(5, 0, 8);
+    this.scene.add(rLight);
+    this.directionalLights.push(rLight);
   }
 
   private setupLightControls() {
@@ -117,7 +131,7 @@ export class BookScene {
 
     for (let i = 0;i < config.numPages;i++) {
       const page = this._createPage(i, textureLoader);
-      this.scene.add(page);
+      this.book.add(page);
       this.pages.push(page);
     }
 
@@ -133,16 +147,24 @@ export class BookScene {
     if (!this.pages.length) return;
     this.updateBgColor(progress);
 
-
     const perSegment = this.perSegment;
     const pageRotations: number[] = [];
+    const pProgress = progress / perSegment;
 
-    this.currentPage = Math.round(progress / perSegment);
+    if (progress < perSegment) {
+      this.camera.position.x =THREE.MathUtils.lerp(config.pageWidth / 2, 0, pProgress);
+
+      if (this.isMobile) {
+        this.camera.position.z = THREE.MathUtils.lerp(this.closedCameraZ, this.normalCameraZ, pProgress);
+      }
+    }
+
+    this.currentPage = Math.round(pProgress);
 
     for (let i = 0;i < config.numPages;i++) {
       const page = this.pages[i];
       const segmentStartProgress = i * perSegment;
-      const flipProgress = Math.max(0, Math.min(1, (progress - segmentStartProgress) / perSegment));
+      const flipProgress = Math.max(0, Math.min(1, pProgress - (segmentStartProgress) / perSegment));
       const flipRotation = -flipProgress * Math.PI;
 
       page.rotation.y = i * config.rotationStep + flipRotation;
@@ -216,7 +238,15 @@ export class BookScene {
     let cameraZ = visibleHeight / (2 * Math.tan(fovInRadians / 2));
 
     const minCameraDistance = 6;
-    this.camera.position.z = Math.max(cameraZ, minCameraDistance);
+    this.normalCameraZ = Math.max(cameraZ, minCameraDistance);
+
+    if (this.isMobile) {
+      this.closedCameraZ = this.normalCameraZ * 0.75
+      this.camera.position.z = this.closedCameraZ;
+    } else {
+      this.camera.position.z = this.normalCameraZ;
+    }
+
     this.camera.position.y = height < width ? 0 : -0.25 * (visibleHeight - config.pageHeight);
 
     this.camera.updateProjectionMatrix();
@@ -334,6 +364,10 @@ export class BookScene {
           new THREE.Plane(new THREE.Vector3(0, 1, 0), config.pageHeight / 2)
         ].map(p => p.clone())
       }));
+
+      this.book.add(front);
+      this.book.add(back);
+
       back.position.set(config.pageWidth, decConfig.offset?.y || 0, z - (decConfig.offset?.z || 0));
       back.rotation.y = Math.PI;
 
