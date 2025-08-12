@@ -21,7 +21,6 @@ export const config = {
   pageWidth: 2.4,
   pageHeight: 3,
   pageDepth: 0.02,
-  rotationStep: 0.01,
   dragSensitivity: 0.15,
   snapDuration: 0.8,
   mediaPages: {

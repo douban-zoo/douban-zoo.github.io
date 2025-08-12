@@ -42,6 +42,7 @@ export class BookScene {
   private maxPixelRatio: number = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? 3 : 2;
   private normalCameraZ: number = 6;
   private closedCameraZ: number = 4;
+  private initialCameraOffset = new THREE.Vector3(-1, -6, -2);
 
   constructor (container: HTMLDivElement) {
     this.container = container;
@@ -51,10 +52,9 @@ export class BookScene {
     this.scene.add(this.book);
 
     this.camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-    // this.camera.position.set(0, 0, 6);
     this.camera.lookAt(0, 0, 0);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: false });
+    this.renderer = new THREE.WebGLRenderer({ antialias: !this.isMobile, alpha: true, logarithmicDepthBuffer: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.maxPixelRatio));
 
 
@@ -90,13 +90,13 @@ export class BookScene {
   private setUpLight() {
     this.scene.add(this.ambientLight);
 
-    const lLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    lLight.position.set(-5, 0, 8);
-    this.scene.add(lLight);
-    this.directionalLights.push(lLight);
+    // const lLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    // lLight.position.set(-5, 0, 8);
+    // this.scene.add(lLight);
+    // this.directionalLights.push(lLight);
 
     const rLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    rLight.position.set(5, 0, 8);
+    rLight.position.set(0, 0, 8);
     this.scene.add(rLight);
     this.directionalLights.push(rLight);
   }
@@ -131,6 +131,8 @@ export class BookScene {
 
     for (let i = 0;i < config.numPages;i++) {
       const page = this._createPage(i, textureLoader);
+      page.position.z = (config.numPages - i) * config.pageDepth;
+
       this.book.add(page);
       this.pages.push(page);
     }
@@ -151,6 +153,7 @@ export class BookScene {
     const pageRotations: number[] = [];
     const pProgress = progress / perSegment;
 
+
     if (progress < perSegment) {
       this.camera.position.x = THREE.MathUtils.lerp(config.pageWidth / 2, 0, pProgress);
 
@@ -158,21 +161,45 @@ export class BookScene {
         this.camera.position.z = THREE.MathUtils.lerp(this.closedCameraZ, this.normalCameraZ, pProgress);
       }
     }
+    // if (progress < perSegment) {
+    //   const endPosition = {
+    //     x: 0,
+    //     y: this.isMobile ? this.camera.position.y : 0,
+    //     z: this.normalCameraZ
+    //   };
+    //   const startPosition = {
+    //     x: endPosition.x + this.initialCameraOffset.x,
+    //     y: endPosition.y + this.initialCameraOffset.y,
+    //     z: endPosition.z + this.initialCameraOffset.z
+    //   };
+
+    //    this.camera.position.x = THREE.MathUtils.lerp(startPosition.x, startPosition.x, pProgress);
+    // this.camera.position.y = THREE.MathUtils.lerp(startPosition.y, startPosition.y, pProgress);
+    // this.camera.position.z = THREE.MathUtils.lerp(startPosition.z, startPosition.z, pProgress);
+    // }
+    // this.camera.lookAt(0, 0, 0);
 
     this.currentPage = Math.round(pProgress);
 
     for (let i = 0;i < config.numPages;i++) {
       const page = this.pages[i];
+
       const segmentStartProgress = i * perSegment;
       const flipProgress = Math.max(0, Math.min(1, pProgress - (segmentStartProgress) / perSegment));
       const flipRotation = -flipProgress * Math.PI;
-
-      page.rotation.y = i * config.rotationStep + flipRotation;
       pageRotations.push(flipRotation);
+
+      page.rotation.y = flipRotation;
+      page.position.z = i < pProgress ? (i - pProgress + 1) * config.pageDepth * flipProgress : (pProgress - i) * config.pageDepth * (1 - flipProgress);
 
       const pageStartProgress = (i - 2) * perSegment;
       const pageEndProgress = (i + 2) * perSegment;
-      page.visible = progress > pageStartProgress && progress < pageEndProgress;
+
+      if (progress < pageStartProgress || progress > pageEndProgress) {
+        page.visible = false;
+        continue;
+      }
+      page.visible = true;
 
       const decs = this.decorationPairs[i];
       if (!decs || decs.length === 0) continue;
@@ -200,6 +227,7 @@ export class BookScene {
     }
 
     this.updateIcons();
+
 
   }
   private updateBgColor(progress: number) {
@@ -270,6 +298,8 @@ export class BookScene {
 
   private _createPage(i: number, textureLoader: THREE.TextureLoader): THREE.Group {
     const pivot = new THREE.Group();
+
+    // TODO: replace bg texture for better rounded corner
     const geometry = this._createRoundedBoxGeometry(config.pageWidth, config.pageHeight, config.pageDepth, 0.12, 64);
 
     const frontTexture = textureLoader.load(assets.pages[i]);
@@ -292,8 +322,8 @@ export class BookScene {
     bNormalTexture.repeat.set(0.5, 1);
 
     const fMaterialConfig = {
-      roughness: 0.35,
-      metalness: 0.05,
+      roughness: 0.4,
+      metalness: 0,
       normalMap: fNormalTexture,
       normalScale: new THREE.Vector2(1, 3)
     };
@@ -349,7 +379,7 @@ export class BookScene {
         transparent: true,
         clippingPlanes: [
           new THREE.Plane(new THREE.Vector3(-1, 0, 0), config.pageWidth - 0.015),
-          new THREE.Plane(new THREE.Vector3(1, 0, 0), -0.025),
+          new THREE.Plane(new THREE.Vector3(1, 0, 0), 0.01),
           new THREE.Plane(new THREE.Vector3(0, -1, 0), config.pageHeight / 2),
           new THREE.Plane(new THREE.Vector3(0, 1, 0), config.pageHeight / 2)
         ].map(p => p.clone())
@@ -361,7 +391,7 @@ export class BookScene {
         alphaTest: 0.01,
         transparent: true,
         clippingPlanes: [
-          new THREE.Plane(new THREE.Vector3(-1, 0, 0), -0.025),
+          new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0.01),
           new THREE.Plane(new THREE.Vector3(1, 0, 0), config.pageWidth - 0.015),
           new THREE.Plane(new THREE.Vector3(0, -1, 0), config.pageHeight / 2),
           new THREE.Plane(new THREE.Vector3(0, 1, 0), config.pageHeight / 2)
