@@ -40,10 +40,25 @@
         &times;
       </button>
 
-      <video class="w-[60%] mt-2 h-auto block mx-auto rounded-xl"></video>
+      <video
+        class="w-[80%] md:w-[60%] mt-2 h-auto block mx-auto rounded-xl"
+        playsinline
+        muted
+        loop
+        autoplay
+      ></video>
     </div>
   </div>
 
+  <!-- for test -->
+  <!-- <video
+  class="w-[60%] mt-2 h-[120px] block mx-auto rounded-xl z-50"
+  playsinline
+  muted
+  loop
+  autoplay
+  src={asset('/videos/jojo-play.webm')}
+></video> -->
   <div class="flex justify-center items-center">
     <Book />
   </div>

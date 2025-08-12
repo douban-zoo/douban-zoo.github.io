@@ -35,8 +35,8 @@ export const assets = {
     '3': asset('audios/pupu.m4a'),
   } as Record<string, string>,
   videos: {
-    '2': asset('videos/jojo-play.mp4'),
-    '3': asset('videos/pupu-daze.mp4'),
+    '2': asset('videos/jojo-play.webm'),
+    '3': asset('videos/pupu-daze.webm'),
   } as Record<string, string>,
   icons: {
     video: asset('icons/video.png'),

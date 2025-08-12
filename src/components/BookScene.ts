@@ -137,7 +137,7 @@ export class BookScene {
       this.pages.push(page);
     }
 
-    this._createMediaIcons(textureLoader);
+    this._initIcons(textureLoader);
     this.update(0);
   }
 
@@ -228,8 +228,9 @@ export class BookScene {
 
     this.updateIcons();
 
-
   }
+
+
   private updateBgColor(progress: number) {
     const now = performance.now();
     if (now - this.lastBgUpdate < 16) return;
@@ -278,6 +279,7 @@ export class BookScene {
     this.camera.position.y = height < width ? 0 : -0.25 * (visibleHeight - config.pageHeight);
 
     this.camera.updateProjectionMatrix();
+    this._updateIconGroupPosition();
   }
 
   public dispose() {
@@ -438,9 +440,16 @@ export class BookScene {
     return geometry;
   }
 
-  private _createMediaIcons(textureLoader: THREE.TextureLoader) {
+  private iconGroup: THREE.Group | null = null;
+  private iconLayoutVertical: boolean = false
+
+  private _initIcons(textureLoader: THREE.TextureLoader) {
     const iconSize = 0.3;
     const iconGeometry = new THREE.PlaneGeometry(iconSize, iconSize);
+    this.iconLayoutVertical = !(this.container.clientWidth > this.container.clientHeight * 1.2);
+
+    this.iconGroup = new THREE.Group();
+    this.scene.add(this.iconGroup);
 
     const videoTexture = textureLoader.load(assets.icons.video);
     videoTexture.colorSpace = THREE.SRGBColorSpace;
@@ -449,10 +458,9 @@ export class BookScene {
       transparent: true,
       opacity: 0,
     });
-
     this.videoIcon = new THREE.Mesh(iconGeometry, videoMaterial);
-    this.videoIcon.position.set(-config.pageWidth - 0.3, 0.7, 0);
-    this.scene.add(this.videoIcon);
+    this.videoIcon.position.set(0, 0.4, 0);
+    this.iconGroup.add(this.videoIcon);
 
     const audioTexture = textureLoader.load(assets.icons.audio);
     audioTexture.colorSpace = THREE.SRGBColorSpace;
@@ -463,9 +471,45 @@ export class BookScene {
     });
 
     this.audioIcon = new THREE.Mesh(iconGeometry.clone(), audioMaterial);
-    this.audioIcon.position.set(-config.pageWidth - 0.3, 0.3, 0);
-    this.scene.add(this.audioIcon);
+    this.audioIcon.position.set(0, 0, 0);
+
+    this.iconGroup.add(this.audioIcon);
+
+    this._updateIconGroupPosition();
   }
+
+  private _updateIconGroupPosition() {
+    const margin = 0.25;
+
+    if (!this.iconGroup) return;
+    const isPortrait = this.container.clientWidth > this.container.clientHeight * 1.2;
+
+    if (isPortrait && !this.iconLayoutVertical) {
+      this.iconLayoutVertical = true;
+      this.iconGroup.position.set(-config.pageWidth - margin, 0.35, 0);
+
+      if (this.videoIcon && this.audioIcon) {
+        this.videoIcon.position.set(0, 0.4, 0);
+        this.audioIcon.position.set(0, 0, 0);
+      }
+    }
+    else if (!isPortrait && this.iconLayoutVertical) {
+      this.iconLayoutVertical = false;
+
+      const yOffset = -config.pageHeight / 2 - margin;
+      this.iconGroup.position.set(0, yOffset, 0);
+      if (this.isMobile) {
+        this.iconGroup.scale.set(1.2, 1.2, 1.2);
+      }
+      if (this.videoIcon && this.audioIcon) {
+        this.videoIcon.position.set(-0.2, 0, 0);
+        this.audioIcon.position.set(0.2, 0, 0);
+      }
+    }
+  }
+
+
+
 
   private updateIcons() {
     if (!this.videoIcon || !this.audioIcon) return;
@@ -500,11 +544,11 @@ export class BookScene {
 
     if (intersects.length > 0) {
       const clickedObject = intersects[0].object;
-
+  
       if (clickedObject === this.videoIcon) {
         this.videoOverlayManager.show(assets.videos[this.currentPage.toString()] || '');
       } else if (clickedObject === this.audioIcon) {
-        playAudio(assets.audios[this.currentPage.toString()] || '',);
+        playAudio(assets.audios[this.currentPage.toString()] || '');
       }
     }
   }
