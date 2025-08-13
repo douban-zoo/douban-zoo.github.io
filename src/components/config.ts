@@ -24,6 +24,7 @@ export const config = {
   dragSensitivity: 0.15,
   snapDuration: 0.8,
   mediaPages: {
+    '1': ['video', 'audio'],
     '2': ['video', 'audio'],
     '3': ['video', 'audio'],
   } as Record<string, ('video' | 'audio')[]>
@@ -31,11 +32,13 @@ export const config = {
 
 export const assets = {
   audios: {
+    '1': asset('audios/meidi.mp3'),
     '2': asset('audios/jojo.m4a'),
     '3': asset('audios/pupu.m4a'),
   } as Record<string, string>,
   videos: {
     '2': asset('videos/jojo-play.webm'),
+    '1': asset('videos/meidi-eat.webm'),
     '3': asset('videos/pupu-daze.webm'),
   } as Record<string, string>,
   icons: {
