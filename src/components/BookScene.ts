@@ -42,7 +42,11 @@ export class BookScene {
   private maxPixelRatio: number = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? 3 : 2;
   private normalCameraZ: number = 6;
   private closedCameraZ: number = 4;
-  private initialCameraOffset = new THREE.Vector3(-1, -6, -2);
+
+  private initialCameraOffset = new THREE.Vector3(5, -5, -4);
+  private initialCameraUp = new THREE.Vector3(-2, 3, 3).normalize();
+
+  public openingAnimationStatus: 'none' | 'playing' | 'played' = 'none';
 
   constructor (container: HTMLDivElement) {
     this.container = container;
@@ -52,7 +56,6 @@ export class BookScene {
     this.scene.add(this.book);
 
     this.camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-    this.camera.lookAt(0, 0, 0);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: !this.isMobile, alpha: true, logarithmicDepthBuffer: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.maxPixelRatio));
@@ -70,6 +73,15 @@ export class BookScene {
 
     window.addEventListener('resize', () => this.handleResize());
     this.handleResize();
+
+    this.camera.position.add(this.initialCameraOffset);
+    this.camera.up.copy(this.initialCameraUp);
+    this.camera.lookAt(0, 0, 0);
+
+    // helper
+    // const axesHelper = new THREE.AxesHelper(5);
+    // this.scene.add(axesHelper);
+
 
     this.renderer.domElement.addEventListener('click', this._onIconClick.bind(this), false);
     this.videoOverlayManager = new VideoOverlayManager(
@@ -131,7 +143,6 @@ export class BookScene {
 
     for (let i = 0;i < config.numPages;i++) {
       const page = this._createPage(i, textureLoader);
-      page.position.z = (config.numPages - i) * config.pageDepth;
 
       this.book.add(page);
       this.pages.push(page);
@@ -145,14 +156,60 @@ export class BookScene {
     this.renderer.render(this.scene, this.camera);
   }
 
+  public playOpeningAnimation() {
+    if (this.openingAnimationStatus !== 'none') return;
+
+    this.openingAnimationStatus = 'playing';
+
+    const targetCameraY = this.getCameraTargetY();
+    const targetPosition = {
+      x: config.pageWidth / 2,
+      y: targetCameraY,
+      z: this.isMobile ? this.closedCameraZ : this.normalCameraZ,
+    };
+    const targetLookAt = new THREE.Vector3(config.pageWidth / 2, targetCameraY, 0);
+    const targetUp = new THREE.Vector3(0, 1, 0);
+
+    const currentLookAt = new THREE.Vector3(0, 0, 0);
+    const currentUp = this.camera.up.clone();
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        this.openingAnimationStatus = 'played';
+      },
+      onUpdate: () => {
+        this.camera.up.copy(currentUp);
+        this.camera.lookAt(currentLookAt);
+      },
+      defaults: {
+        duration: 2.5,
+        ease: 'power3.inOut',
+      },
+    });
+
+    const startTime = 0;
+
+    tl.to(this.camera.position, { ...targetPosition }, startTime);
+    tl.to(currentLookAt, { ...targetLookAt }, startTime);
+    tl.to(currentUp, { ...targetUp }, startTime);
+  }
+
+  get openingAnimationPlayed() {
+    return this.openingAnimationStatus === 'played';
+  }
+
   public update(progress: number) {
     if (!this.pages.length) return;
+
+    if (!this.openingAnimationPlayed) {
+      return;
+    }
+
     this.updateBgColor(progress);
 
     const perSegment = this.perSegment;
     const pageRotations: number[] = [];
     const pProgress = progress / perSegment;
-
 
     if (progress < perSegment) {
       this.camera.position.x = THREE.MathUtils.lerp(config.pageWidth / 2, 0, pProgress);
@@ -161,23 +218,6 @@ export class BookScene {
         this.camera.position.z = THREE.MathUtils.lerp(this.closedCameraZ, this.normalCameraZ, pProgress);
       }
     }
-    // if (progress < perSegment) {
-    //   const endPosition = {
-    //     x: 0,
-    //     y: this.isMobile ? this.camera.position.y : 0,
-    //     z: this.normalCameraZ
-    //   };
-    //   const startPosition = {
-    //     x: endPosition.x + this.initialCameraOffset.x,
-    //     y: endPosition.y + this.initialCameraOffset.y,
-    //     z: endPosition.z + this.initialCameraOffset.z
-    //   };
-
-    //    this.camera.position.x = THREE.MathUtils.lerp(startPosition.x, startPosition.x, pProgress);
-    // this.camera.position.y = THREE.MathUtils.lerp(startPosition.y, startPosition.y, pProgress);
-    // this.camera.position.z = THREE.MathUtils.lerp(startPosition.z, startPosition.z, pProgress);
-    // }
-    // this.camera.lookAt(0, 0, 0);
 
     this.currentPage = Math.round(pProgress);
 
@@ -187,6 +227,7 @@ export class BookScene {
       const segmentStartProgress = i * perSegment;
       const flipProgress = Math.max(0, Math.min(1, pProgress - (segmentStartProgress) / perSegment));
       const flipRotation = -flipProgress * Math.PI;
+
       pageRotations.push(flipRotation);
 
       page.rotation.y = flipRotation;
@@ -230,6 +271,19 @@ export class BookScene {
 
   }
 
+  private getCameraTargetY(): number {
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+
+    const widthPercentage = 0.95;
+    const visibleWidth = config.pageWidth * 2 / widthPercentage;
+    const visibleHeight = visibleWidth / this.camera.aspect;
+
+    return height < width
+      ? 0
+      : -0.25 * (visibleHeight - config.pageHeight);
+  }
+
 
   private updateBgColor(progress: number) {
     const now = performance.now();
@@ -251,6 +305,7 @@ export class BookScene {
     this.renderer.setClearColor(color);
     document.documentElement.style.setProperty('--bgColor', color.getStyle());
   }
+
   public handleResize() {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
@@ -276,8 +331,10 @@ export class BookScene {
       this.camera.position.z = this.normalCameraZ;
     }
 
-    this.camera.position.y = height < width ? 0 : -0.25 * (visibleHeight - config.pageHeight);
+    if (this.openingAnimationPlayed) {
+      this.camera.position.y = this.getCameraTargetY();
 
+    }
     this.camera.updateProjectionMatrix();
     this._updateIconGroupPosition();
   }
@@ -337,8 +394,8 @@ export class BookScene {
     const pageMesh = new THREE.Mesh(geometry, [
       new THREE.MeshStandardMaterial({ map: frontTexture }),
       new THREE.MeshStandardMaterial({ map: backTexture }),
-      new THREE.MeshStandardMaterial({ map: frontTexture }),
       new THREE.MeshStandardMaterial({ map: backTexture }),
+      new THREE.MeshStandardMaterial({ map: frontTexture }),
       new THREE.MeshStandardMaterial({ ...fMaterialConfig, map: frontTexture }),
       new THREE.MeshStandardMaterial({ ...bMaterialConfig, map: backTexture })
     ]);
@@ -351,6 +408,9 @@ export class BookScene {
       this.pages[i - 1]?.add(pair.back);
     });
     this.decorationPairs[i] = pairs;
+
+    pivot.position.z = (config.numPages - i) * config.pageDepth;
+
     return pivot;
   }
 
@@ -508,9 +568,6 @@ export class BookScene {
     }
   }
 
-
-
-
   private updateIcons() {
     if (!this.videoIcon || !this.audioIcon) return;
 
@@ -544,7 +601,7 @@ export class BookScene {
 
     if (intersects.length > 0) {
       const clickedObject = intersects[0].object;
-  
+
       if (clickedObject === this.videoIcon) {
         this.videoOverlayManager.show(assets.videos[this.currentPage.toString()] || '');
       } else if (clickedObject === this.audioIcon) {

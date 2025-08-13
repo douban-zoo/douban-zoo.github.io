@@ -50,6 +50,11 @@
   }
 
   function onPointerDown(event: PointerEvent) {
+    if (!bookScene?.openingAnimationPlayed) {
+      bookScene?.playOpeningAnimation();
+      return;
+    }
+
     gsap.killTweensOf(progressTween);
     isDragging = true;
     startX = event.clientX;
