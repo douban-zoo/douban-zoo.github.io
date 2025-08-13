@@ -1,4 +1,3 @@
-import { scale } from "svelte/transition";
 
 export function getBaseUrl() {
   try {
@@ -18,7 +17,7 @@ export const asset = (path: string) => getBaseUrl() + path.replace(/^\/+/, '');
 
 export const config = {
   numPages: 6,
-  pageWidth: 2.4,
+  pageWidth: 2.5,
   pageHeight: 3,
   pageDepth: 0.02,
   dragSensitivity: 0.15,
@@ -27,6 +26,7 @@ export const config = {
     '1': ['video', 'audio'],
     '2': ['video', 'audio'],
     '3': ['video', 'audio'],
+    '4': ['video', 'audio'],
   } as Record<string, ('video' | 'audio')[]>
 };
 
@@ -35,11 +35,13 @@ export const assets = {
     '1': asset('audios/meidi.mp3'),
     '2': asset('audios/jojo.m4a'),
     '3': asset('audios/pupu.m4a'),
+    '4': asset('audios/tianchengzi.mp3'),
   } as Record<string, string>,
   videos: {
     '2': asset('videos/jojo-play.webm'),
     '1': asset('videos/meidi-eat.webm'),
     '3': asset('videos/pupu-daze.webm'),
+    '4': asset('videos/tianchengzi-eat.webm'),
   } as Record<string, string>,
   icons: {
     video: asset('icons/video.png'),
@@ -55,26 +57,26 @@ export const assets = {
     asset('imgs/bg/meidi.png'),
     asset('imgs/bg/jongjong.png'),
     asset('imgs/bg/pupu.png'),
-    asset('imgs/bg/jongjong.png'),
+    asset('imgs/bg/tianchengzi.png'),
     asset('imgs/bg/meidi.png'),
   ],
   decorations: [
     [],
     [
       { texture: asset('imgs/dec/meidi1.png'), parallaxFactor: 0.2, offset: { x: 2, y: -0.1, z: 0.016 }, scale: 1.25 },
-      { texture: asset('imgs/dec/meidi2.png'), parallaxFactor: 0.1, offset: { x: 0.8, y: -0.1, z: 0.015 }, scale: 1.2 },
+      { texture: asset('imgs/dec/meidi2.png'), parallaxFactor: 0.1, offset: { x: 0.85, y: -0.05, z: 0.015 }, scale: 1.3 },
     ],
     [
-      { texture: asset('imgs/dec/jojo1.png'), parallaxFactor: 0.35, offset: { x: 2.76, y: -0.05, z: 0.014 }, scale: 1.28 },
+      { texture: asset('imgs/dec/jojo1.png'), parallaxFactor: 0.35, offset: { x: 2.9, y: -0.025, z: 0.014 }, scale: 1.3 },
       { texture: asset('imgs/dec/jojo2.png'), parallaxFactor: 0.2, offset: { x: 1.5, y: -0.15, z: 0.016 }, scale: 1.2 },
     ],
     [
-      { texture: asset('imgs/dec/pupu1.png'), parallaxFactor: 0.29, offset: { x: 2.2, y: -0.1, z: 0.014 }, scale: 1.2 },
-      { texture: asset('imgs/dec/pupu2.png'), parallaxFactor: 0.23, offset: { x: 1.4, y: 0.2, z: 0.016 }, scale: 0.9 },
+      { texture: asset('imgs/dec/pupu1.png'), parallaxFactor: 0.28, offset: { x: 2.2, y: -0.1, z: 0.014 }, scale: 1.2 },
+      { texture: asset('imgs/dec/pupu2.png'), parallaxFactor: 0.23, offset: { x: 1.5, y: 0.2, z: 0.016 }, scale: 0.92 },
     ],
     [
-      { texture: asset('imgs/dec/jojo1.png'), parallaxFactor: 0.35, offset: { x: 2.74, y: -0.36, z: 0.014 } },
-      { texture: asset('imgs/dec/jojo2.png'), parallaxFactor: 0.2, offset: { x: 1.5, y: -0.25, z: 0.016 } },
+      { texture: asset('imgs/dec/tianchengzi1.png'), parallaxFactor: 0.3, offset: { x: 2.8, y: -0.13, z: 0.016 }, scale: 1.21 },
+      { texture: asset('imgs/dec/tianchengzi2.png'), parallaxFactor: 0.2, offset: { x: 1.4, y: -0.5, z: 0.014 }, scale: 0.9 },
     ],
     [],
   ],
@@ -84,9 +86,9 @@ export const palette = {
   bg: [
     '#52AC6A',
     '#F4CEE8',
-    '#A2D5FF',
+    '#88C1EF',
     '#1CB8C7',
-    '#A2D5FF',
+    '#D86D1A',
     '#F4CEE8',
   ]
 }

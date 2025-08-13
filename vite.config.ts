@@ -6,6 +6,9 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   // fast magic
   // base:'https://gcore.jsdelivr.net/gh/douban-zoo/douban-zoo.github.io@gh-pages/',
+  define: {
+    'process.env': {}
+  },
   plugins: [
     tailwindcss(),
     svelte()

@@ -4,6 +4,7 @@ import { config, assets, palette } from './config';
 import gsap from 'gsap';
 import { playAudio } from '../utils/audios';
 import { VideoOverlayManager } from '../utils/video';
+import { isDev } from "../utils/env";
 
 type DecorationPair = {
   front: THREE.Mesh;
@@ -43,10 +44,10 @@ export class BookScene {
   private normalCameraZ: number = 6;
   private closedCameraZ: number = 4;
 
-  private initialCameraOffset = new THREE.Vector3(5, -5, -4);
-  private initialCameraUp = new THREE.Vector3(-2, 3, 3).normalize();
+  private initialCameraOffset = isDev() ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(5, -5, -4);
+  private initialCameraUp = isDev() ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(-2, 3, 3).normalize();
 
-  public openingAnimationStatus: 'none' | 'playing' | 'played' = 'none';
+  public openingAnimationStatus: 'none' | 'playing' | 'played' = isDev() ? 'played' : 'none';
 
   constructor (container: HTMLDivElement) {
     this.container = container;
@@ -107,7 +108,7 @@ export class BookScene {
     // this.scene.add(lLight);
     // this.directionalLights.push(lLight);
 
-    const rLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    const rLight = new THREE.DirectionalLight(0xffffff, 0.6);
     rLight.position.set(0, 0, 8);
     this.scene.add(rLight);
     this.directionalLights.push(rLight);
