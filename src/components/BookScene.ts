@@ -40,7 +40,7 @@ export class BookScene {
   private closedCameraZ: number = 4;
 
   private initialCameraOffset = isDev() ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(5, -5, -4);
-  private initialCameraUp = isDev() ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(-2, 3, 3).normalize();
+  private initialCameraUp = isDev() ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(-2, 3, 3);
 
   public openingAnimationStatus: 'none' | 'playing' | 'played' = isDev() ? 'played' : 'none';
 
@@ -56,6 +56,18 @@ export class BookScene {
     this.renderer = new THREE.WebGLRenderer({ antialias: !this.isMobile, alpha: true, logarithmicDepthBuffer: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.maxPixelRatio));
 
+
+    this.videoOverlayManager = new VideoOverlayManager(() => { }, () => { });
+
+    this.iconManager = new IconManager(
+      this.scene,
+      this.camera,
+      this.container,
+      this.renderer,
+      this.videoOverlayManager
+    );
+
+    this.handleResize();  //FIXME: 现在这个 handleResize 不可以放在后面执行
 
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.toneMapping = THREE.NoToneMapping;
@@ -75,20 +87,7 @@ export class BookScene {
     // const axesHelper = new THREE.AxesHelper(5);
     // this.scene.add(axesHelper);
 
-    this.videoOverlayManager = new VideoOverlayManager(() => { }, () => { });
-
-    this.iconManager = new IconManager(
-      this.scene,
-      this.camera,
-      this.container,
-      this.renderer,
-      this.videoOverlayManager
-    );
-
-
     window.addEventListener('resize', () => this.handleResize());
-    this.handleResize();
-
   }
 
   private setUpLight() {
