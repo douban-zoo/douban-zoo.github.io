@@ -41,6 +41,7 @@ export class BookScene {
 
   private initialCameraOffset = isDev() ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(5, -5, -4);
   private initialCameraUp = isDev() ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(-2, 3, 3);
+  // FIXME: mobile dev 视角有问题
 
   public openingAnimationStatus: 'none' | 'playing' | 'played' = isDev() ? 'played' : 'none';
 
@@ -67,8 +68,6 @@ export class BookScene {
       this.videoOverlayManager
     );
 
-    this.handleResize();  //FIXME: 现在这个 handleResize 不可以放在后面执行
-
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.toneMapping = THREE.NoToneMapping;
     this.renderer.localClippingEnabled = true;
@@ -79,6 +78,9 @@ export class BookScene {
     this.setUpLight();
     // this.setupLightControls();
 
+    this.handleResize();  //FIXME: 现在这个 handleResize 不可以放在后面执行
+    window.addEventListener('resize', () => this.handleResize());
+
     this.camera.position.add(this.initialCameraOffset);
     this.camera.up.copy(this.initialCameraUp);
     this.camera.lookAt(0, 0, 0);
@@ -87,7 +89,6 @@ export class BookScene {
     // const axesHelper = new THREE.AxesHelper(5);
     // this.scene.add(axesHelper);
 
-    window.addEventListener('resize', () => this.handleResize());
   }
 
   private setUpLight() {

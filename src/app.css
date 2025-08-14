@@ -7,7 +7,7 @@ body {
   @apply absolute w-full h-full pointer-events-none overflow-hidden left-0 top-0;
 }
 .draggable-photo {
-  @apply absolute pointer-events-auto bg-contain bg-no-repeat cursor-grab opacity-0 animate-[fadeIn_0.3s_ease_forwards] active:cursor-grabbing active:z-[1000];
+  @apply absolute pointer-events-auto bg-contain bg-no-repeat cursor-grab opacity-0 animate-[fadeIn_0.3s_ease_forwards] active:cursor-grabbing will-change-transform;
   filter: drop-shadow(4px 0 0 #eee) drop-shadow(-4px 0 0 #eee)
     drop-shadow(0 4px 0 #eee) drop-shadow(0 -4px 0 #eee);
 

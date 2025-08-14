@@ -213,10 +213,9 @@ export class IconManager {
       let newY = clientY - offsetY;
 
       const containerRect = this.photoContainer.getBoundingClientRect();
-      const elRect = el.getBoundingClientRect();
 
-      newX = Math.max(0, Math.min(newX, containerRect.width - elRect.width));
-      newY = Math.max(0, Math.min(newY, containerRect.height - elRect.height));
+      newX = Math.max(-el.clientWidth, Math.min(newX, containerRect.width));
+      newY = Math.max(-el.clientHeight, Math.min(newY, containerRect.height));
 
       el.style.left = `${ newX }px`;
       el.style.top = `${ newY }px`;
