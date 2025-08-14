@@ -151,7 +151,7 @@ export class IconManager {
       photoEl.className = 'draggable-photo';
 
       const containerWidth = this.container.clientWidth;
-      const scaleFactor = containerWidth < 448 ? 0.3 : containerWidth < 768 ? 0.2 : 0.1;
+      const scaleFactor = containerWidth < 448 ? 0.3 : containerWidth < 1024 ? 0.2 : 0.1;
       const photoWidth = containerWidth * scaleFactor;
       photoEl.style.width = `${ photoWidth }px`;
       photoEl.style.height = `${ photoWidth / aspect }px`;

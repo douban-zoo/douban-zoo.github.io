@@ -6,20 +6,26 @@ body {
 #photo-overlay-container {
   @apply absolute w-full h-full pointer-events-none overflow-hidden left-0 top-0;
 }
-.draggable-photo {
-  @apply absolute pointer-events-auto bg-contain bg-no-repeat cursor-grab opacity-0 animate-[fadeIn_0.3s_ease_forwards] active:cursor-grabbing will-change-transform;
-  filter: drop-shadow(4px 0 0 #eee) drop-shadow(-4px 0 0 #eee)
-    drop-shadow(0 4px 0 #eee) drop-shadow(0 -4px 0 #eee);
 
-  &:active {
-    filter: drop-shadow(4px 0 0 color-mix(in srgb, var(--bgColor) 50%, white))
-    drop-shadow(-4px 0 0 color-mix(in srgb, var(--bgColor) 50%, white))
-    drop-shadow(0 4px 0 color-mix(in srgb, var(--bgColor) 50%, white))
-    drop-shadow(0 -4px 0 color-mix(in srgb, var(--bgColor) 50%, white));
+.draggable-photo {
+      --shadow-offset: 5px;
+      --shadow-color: #eee;
+      --shadow-active-color: color-mix(in srgb, var(--bgColor) 50%, white);
+
+      @apply absolute pointer-events-auto bg-contain bg-no-repeat cursor-grab opacity-0 animate-[fadeIn_0.3s_ease_forwards] active:cursor-grabbing will-change-transform;
+
+    filter: drop-shadow(var(--shadow-offset) 0 0 var(--shadow-color)) drop-shadow(calc(var(--shadow-offset) * -1) 0 0 var(--shadow-color)) drop-shadow(0 var(--shadow-offset) 0 var(--shadow-color)) drop-shadow(0 calc(var(--shadow-offset) * -1) 0 var(--shadow-color));
+
+    &:active {
+      filter: drop-shadow(var(--shadow-offset) 0 0 var(--shadow-active-color)) drop-shadow(calc(var(--shadow-offset) * -1) 0 0 var(--shadow-active-color)) drop-shadow(0 var(--shadow-offset) 0 var(--shadow-active-color)) drop-shadow(0 calc(var(--shadow-offset) * -1) 0 var(--shadow-active-color));
+    }
   }
 
-}
-
+  @media (max-width: 768px) {
+    .draggable-photo {
+      --shadow-offset: 3px;
+    }
+  }
 @keyframes fadeIn {
   to {
     opacity: 1;

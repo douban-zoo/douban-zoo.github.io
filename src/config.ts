@@ -44,7 +44,7 @@ export const assets = {
     {
       audio: asset('audios/meidi.mp3'),
       video: asset('videos/meidi-eat.webm'),
-      photo: 9,
+      photo: 16,
     },
     {
       audio: asset('audios/jojo.m4a'),
