@@ -35,9 +35,11 @@
 
     ticker = gsap.to(textEl, {
       x: -singleCopyWidth,
-      duration: singleCopyWidth / 50,
+      duration: singleCopyWidth / 60,
       ease: 'linear',
       repeat: -1,
+      force3D: true,
+      roundProps: 'x',
     });
   }
 
@@ -51,21 +53,17 @@
 </script>
 
 {#if visible && wikiText}
-  <div class="fixed top-0 left-0 w-full bg-white/80 backdrop-blur-lg shadow-xs z-50 h-8 lg:h-11 flex items-center">
+  <div class="fixed top-0 left-0 w-full bg-white/70 backdrop-blur-sm shadow-xs z-50 h-8 lg:h-10 flex items-center">
     <div class="relative overflow-hidden flex-1 h-full">
       <div
         bind:this={textEl}
-        class="absolute whitespace-nowrap text-sm lg:text-lg text-[var(--bgColor)] top-0 left-24 h-full flex items-center"
+        class="absolute whitespace-nowrap text-sm lg:text-base will-change-transform text-[var(--textColor)] top-0 left-24 h-full flex items-center"
       >
         {#each Array(2) as _}
-          <div class="px-6">
-            {#each lines as line, i}
-              {#if i < lines.length - 1}
-                <span class="pl-3">•</span>
-              {/if}
-              {line}
-            {/each}
-          </div>
+          {#each lines as line}
+            <span class="pl-3">•</span>
+            {line}
+          {/each}
         {/each}
       </div>
     </div>

@@ -293,7 +293,20 @@ export class BookScene {
     const color = colorLow.clone().lerp(colorHigh, lerpFactor);
 
     this.renderer.setClearColor(color);
+    this.setColorVariable(color);
+  }
+
+  private setColorVariable(color: THREE.Color) {
+    const hsl = { h: 0, s: 0, l: 0 };
+    color.getHSL(hsl);
+
+    let textColor: THREE.Color = color;
+    if (hsl.l > 0.5) {
+      textColor = new THREE.Color().setHSL(hsl.h, hsl.s - 0.1, 0.6 * hsl.l);
+    }
+
     document.documentElement.style.setProperty('--bgColor', color.getStyle());
+    document.documentElement.style.setProperty('--textColor', textColor.getStyle());
   }
 
 
