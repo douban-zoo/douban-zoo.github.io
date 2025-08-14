@@ -18,9 +18,11 @@
     scroll();
   }
 
-  function scroll() {
+  async function scroll() {
     if (!textEl) return;
     gsap.killTweensOf(textEl);
+
+    await gsap.delayedCall(0.02, () => {});
 
     const totalWidth = textEl.scrollWidth;
     const singleCopyWidth = totalWidth / 2;
@@ -44,7 +46,7 @@
   }
 
   onMount(() => {
-    scroll();
+    setTimeout(scroll, 50);
   });
 
   onDestroy(() => {
@@ -53,7 +55,7 @@
 </script>
 
 {#if visible && wikiText}
-  <div class="fixed top-0 left-0 w-full bg-white/70 backdrop-blur-sm shadow-xs z-50 h-8 lg:h-10 flex items-center">
+  <div class="fixed top-0 left-0 w-full bg-white/70 backdrop-blur-sm shadow-xs z-10 h-8 flex items-center">
     <div class="relative overflow-hidden flex-1 h-full">
       <div
         bind:this={textEl}
@@ -61,7 +63,7 @@
       >
         {#each Array(2) as _}
           {#each lines as line}
-            <span class="pl-3">•</span>
+            <span class="pl-3">•&nbsp;</span>
             {line}
           {/each}
         {/each}

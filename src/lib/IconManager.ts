@@ -28,7 +28,7 @@ export class IconManager {
 
 
   private boundHandleClick: (event: MouseEvent) => void;
-  private maxZIndex: number = 1;
+  private maxZIndex: number = 11;
 
   constructor (
     scene: THREE.Scene,
@@ -267,7 +267,7 @@ export class IconManager {
     const visibleIcons: THREE.Mesh[] = [];
     if ((this.videoIcon.material as THREE.MeshBasicMaterial).opacity > 0) visibleIcons.push(this.videoIcon);
     if ((this.audioIcon.material as THREE.MeshBasicMaterial).opacity > 0) visibleIcons.push(this.audioIcon);
-  if ((this.photoIcon.material as THREE.MeshBasicMaterial).opacity > 0) visibleIcons.push(this.photoIcon);
+    if ((this.photoIcon.material as THREE.MeshBasicMaterial).opacity > 0) visibleIcons.push(this.photoIcon);
 
     if (visibleIcons.length === 0) return;
 
