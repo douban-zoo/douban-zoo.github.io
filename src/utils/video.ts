@@ -35,7 +35,6 @@ export class VideoOverlayManager {
 
   public close() {
 
-
     this.videoElement.pause();
     // this.videoElement.src = '';
 

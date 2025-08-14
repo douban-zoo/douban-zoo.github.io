@@ -2,7 +2,7 @@
   import {onMount} from 'svelte';
   import {gsap} from 'gsap';
   import {BookScene} from './BookScene';
-  import {config} from './config';
+  import {config} from '../config';
 
   let container: HTMLDivElement;
   let bookScene: BookScene | null = null;

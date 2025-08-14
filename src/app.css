@@ -1,7 +1,27 @@
 @import "tailwindcss";
 
 body {
-  margin: 0;
-  padding: 0;
-  background-color: var(--bgColor, #52AC6A);
+  @apply bg-[color:var(--bgColor,#52AC6A)] m-0 p-0 overflow-hidden;
+}
+#photo-overlay-container {
+  @apply absolute w-full h-full pointer-events-none overflow-hidden left-0 top-0;
+}
+.draggable-photo {
+  @apply absolute pointer-events-auto bg-contain bg-no-repeat cursor-grab opacity-0 animate-[fadeIn_0.3s_ease_forwards] active:cursor-grabbing active:z-[1000];
+  filter: drop-shadow(4px 0 0 #eee) drop-shadow(-4px 0 0 #eee)
+    drop-shadow(0 4px 0 #eee) drop-shadow(0 -4px 0 #eee);
+
+  &:active {
+    filter: drop-shadow(4px 0 0 color-mix(in srgb, var(--bgColor) 50%, white))
+    drop-shadow(-4px 0 0 color-mix(in srgb, var(--bgColor) 50%, white))
+    drop-shadow(0 4px 0 color-mix(in srgb, var(--bgColor) 50%, white))
+    drop-shadow(0 -4px 0 color-mix(in srgb, var(--bgColor) 50%, white));
+  }
+
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
 }

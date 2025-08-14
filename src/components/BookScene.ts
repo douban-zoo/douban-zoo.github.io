@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import * as dat from 'lil-gui';
-import { config, assets, palette } from './config';
+import { config, assets, palette } from '../config';
 import gsap from 'gsap';
-import { playAudio } from '../utils/audios';
+import { IconManager } from './IconManager';
 import { VideoOverlayManager } from '../utils/video';
 import { isDev } from "../utils/env";
 
@@ -26,13 +26,8 @@ export class BookScene {
   private directionalLights: THREE.DirectionalLight[] = [];
   private gui: dat.GUI;
 
-  private videoIcon?: THREE.Mesh;
-  private audioIcon?: THREE.Mesh;
-  private raycaster = new THREE.Raycaster();
-  private mouse = new THREE.Vector2();
-  private isPaused = false;
   private videoOverlayManager: VideoOverlayManager;
-
+  private iconManager: IconManager;
 
   private readonly perSegment = 1 / config.numPages;
 
@@ -72,9 +67,6 @@ export class BookScene {
     this.setUpLight();
     // this.setupLightControls();
 
-    window.addEventListener('resize', () => this.handleResize());
-    this.handleResize();
-
     this.camera.position.add(this.initialCameraOffset);
     this.camera.up.copy(this.initialCameraUp);
     this.camera.lookAt(0, 0, 0);
@@ -83,25 +75,25 @@ export class BookScene {
     // const axesHelper = new THREE.AxesHelper(5);
     // this.scene.add(axesHelper);
 
+    this.videoOverlayManager = new VideoOverlayManager(() => { }, () => { });
 
-    this.renderer.domElement.addEventListener('click', this._onIconClick.bind(this), false);
-    this.videoOverlayManager = new VideoOverlayManager(
-      () => this.pause(),
-      () => this.resume()
+    this.iconManager = new IconManager(
+      this.scene,
+      this.camera,
+      this.container,
+      this.renderer,
+      this.videoOverlayManager
     );
 
-  }
 
-  public pause() {
-    this.isPaused = true;
-  }
+    window.addEventListener('resize', () => this.handleResize());
+    this.handleResize();
 
-  public resume() {
-    this.isPaused = false;
   }
 
   private setUpLight() {
     this.scene.add(this.ambientLight);
+
 
     // const lLight = new THREE.DirectionalLight(0xffffff, 0.5);
     // lLight.position.set(-5, 0, 8);
@@ -137,6 +129,7 @@ export class BookScene {
     });
   }
 
+
   public async init() {
     const textureLoader = new THREE.TextureLoader();
     const loadPromises = assets.pages.map((url) => new Promise((resolve) => textureLoader.load(url, resolve)));
@@ -144,12 +137,11 @@ export class BookScene {
 
     for (let i = 0;i < config.numPages;i++) {
       const page = this._createPage(i, textureLoader);
-
       this.book.add(page);
       this.pages.push(page);
     }
 
-    this._initIcons(textureLoader);
+    this.iconManager.init(textureLoader);
     this.update(0);
   }
 
@@ -194,6 +186,7 @@ export class BookScene {
     tl.to(currentLookAt, { ...targetLookAt }, startTime);
     tl.to(currentUp, { ...targetUp }, startTime);
   }
+
 
   get openingAnimationPlayed() {
     return this.openingAnimationStatus === 'played';
@@ -268,8 +261,7 @@ export class BookScene {
       });
     }
 
-    this.updateIcons();
-
+    this.iconManager.update(this.currentPage);
   }
 
   private getCameraTargetY(): number {
@@ -284,8 +276,6 @@ export class BookScene {
       ? 0
       : -0.25 * (visibleHeight - config.pageHeight);
   }
-
-
   private updateBgColor(progress: number) {
     const now = performance.now();
     if (now - this.lastBgUpdate < 16) return;
@@ -295,17 +285,18 @@ export class BookScene {
     const numColors = palette.bg.length;
     const sProgress = progress * numColors;
     const low = Math.floor(sProgress) % numColors;
-    const hight = (low + 1) % numColors;
+    const high = (low + 1) % numColors;
     const lerpFactor = sProgress - Math.floor(sProgress);
 
     const colorLow = new THREE.Color(palette.bg[low]);
-    const colorHigh = new THREE.Color(palette.bg[hight]);
+    const colorHigh = new THREE.Color(palette.bg[high]);
 
     const color = colorLow.clone().lerp(colorHigh, lerpFactor);
 
     this.renderer.setClearColor(color);
     document.documentElement.style.setProperty('--bgColor', color.getStyle());
   }
+
 
   public handleResize() {
     const width = this.container.clientWidth;
@@ -334,15 +325,17 @@ export class BookScene {
 
     if (this.openingAnimationPlayed) {
       this.camera.position.y = this.getCameraTargetY();
-
     }
     this.camera.updateProjectionMatrix();
-    this._updateIconGroupPosition();
+
+    this.iconManager.onResize();
   }
 
   public dispose() {
     this.pages.length = 0;
     this.decorationPairs.length = 0;
+
+    this.iconManager.dispose();
 
     this.renderer.dispose();
 
@@ -414,7 +407,6 @@ export class BookScene {
 
     return pivot;
   }
-
   private _createDecorations(i: number, textureLoader: THREE.TextureLoader, z: number): DecorationPair[] {
     const decorations = assets.decorations[i] || [];
     const pairs: DecorationPair[] = [];
@@ -475,7 +467,6 @@ export class BookScene {
     });
     return pairs;
   }
-
   private _createRoundedBoxGeometry(width: number, height: number, depth: number, radius: number, segments: number): THREE.BoxGeometry {
     const geometry = new THREE.BoxGeometry(width, height, depth, segments, segments, segments);
     const position = geometry.attributes.position;
@@ -499,115 +490,5 @@ export class BookScene {
 
     geometry.computeVertexNormals();
     return geometry;
-  }
-
-  private iconGroup: THREE.Group | null = null;
-  private iconLayoutVertical: boolean = false
-
-  private _initIcons(textureLoader: THREE.TextureLoader) {
-    const iconSize = 0.3;
-    const iconGeometry = new THREE.PlaneGeometry(iconSize, iconSize);
-    this.iconLayoutVertical = !(this.container.clientWidth > this.container.clientHeight * 1.2);
-
-    this.iconGroup = new THREE.Group();
-    this.scene.add(this.iconGroup);
-
-    const videoTexture = textureLoader.load(assets.icons.video);
-    videoTexture.colorSpace = THREE.SRGBColorSpace;
-    const videoMaterial = new THREE.MeshBasicMaterial({
-      map: videoTexture,
-      transparent: true,
-      opacity: 0,
-    });
-    this.videoIcon = new THREE.Mesh(iconGeometry, videoMaterial);
-    this.videoIcon.position.set(0, 0.4, 0);
-    this.iconGroup.add(this.videoIcon);
-
-    const audioTexture = textureLoader.load(assets.icons.audio);
-    audioTexture.colorSpace = THREE.SRGBColorSpace;
-    const audioMaterial = new THREE.MeshBasicMaterial({
-      map: audioTexture,
-      transparent: true,
-      opacity: 0,
-    });
-
-    this.audioIcon = new THREE.Mesh(iconGeometry.clone(), audioMaterial);
-    this.audioIcon.position.set(0, 0, 0);
-
-    this.iconGroup.add(this.audioIcon);
-
-    this._updateIconGroupPosition();
-  }
-
-  private _updateIconGroupPosition() {
-    const margin = 0.25;
-
-    if (!this.iconGroup) return;
-    const isPortrait = this.container.clientWidth > this.container.clientHeight * 1.2;
-
-    if (isPortrait && !this.iconLayoutVertical) {
-      this.iconLayoutVertical = true;
-      this.iconGroup.position.set(-config.pageWidth - margin, 0.35, 0);
-
-      if (this.videoIcon && this.audioIcon) {
-        this.videoIcon.position.set(0, 0.4, 0);
-        this.audioIcon.position.set(0, 0, 0);
-      }
-    }
-    else if (!isPortrait && this.iconLayoutVertical) {
-      this.iconLayoutVertical = false;
-
-      const yOffset = -config.pageHeight / 2 - margin;
-      this.iconGroup.position.set(0, yOffset, 0);
-      if (this.isMobile) {
-        this.iconGroup.scale.set(1.2, 1.2, 1.2);
-      }
-      if (this.videoIcon && this.audioIcon) {
-        this.videoIcon.position.set(-0.2, 0, 0);
-        this.audioIcon.position.set(0.2, 0, 0);
-      }
-    }
-  }
-
-  private updateIcons() {
-    if (!this.videoIcon || !this.audioIcon) return;
-
-    const mediaToShow = config.mediaPages[this.currentPage] || [];
-
-    gsap.to(this.videoIcon.material, {
-      duration: 0.05,
-      delay: 0.05,
-      opacity: mediaToShow.includes('video') ? 1 : 0,
-      ease: 'power2.inOut',
-    });
-    gsap.to(this.audioIcon.material, {
-      duration: 0.05,
-      delay: 0.05,
-      opacity: mediaToShow.includes('audio') ? 1 : 0,
-      ease: 'power2.inOut',
-    });
-
-  }
-
-  private _onIconClick(event: MouseEvent) {
-    this.mouse.x = (event.clientX / this.container.clientWidth) * 2 - 1;
-    this.mouse.y = -(event.clientY / this.container.clientHeight) * 2 + 1;
-
-    this.raycaster.setFromCamera(this.mouse, this.camera);
-
-    const icons = [this.videoIcon, this.audioIcon].filter(icon => icon?.visible) as THREE.Mesh[];
-    if (icons.length === 0) return;
-
-    const intersects = this.raycaster.intersectObjects(icons);
-
-    if (intersects.length > 0) {
-      const clickedObject = intersects[0].object;
-
-      if (clickedObject === this.videoIcon) {
-        this.videoOverlayManager.show(assets.videos[this.currentPage.toString()] || '');
-      } else if (clickedObject === this.audioIcon) {
-        playAudio(assets.audios[this.currentPage.toString()] || '');
-      }
-    }
   }
 }
