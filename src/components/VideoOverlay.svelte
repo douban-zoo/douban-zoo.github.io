@@ -12,7 +12,7 @@
     <button
       class="
       close-button
-      absolute top-2 right-2 w-6 h-6 rounded-full bg-white text-[var(--bgColor)]
+      absolute top-2 right-2 w-6 h-6 rounded-full bg-white text-[var(--textColor)]
       flex items-center justify-center
       text-xl font-bold cursor-pointer shadow-lg
       transition-transform duration-200 ease-in-out hover:scale-110

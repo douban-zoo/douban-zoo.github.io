@@ -14,9 +14,6 @@ importers:
       gsap:
         specifier: ^3.13.0
         version: 3.13.0
-      lil-gui:
-        specifier: ^0.20.0
-        version: 0.20.0
       tailwindcss:
         specifier: ^4.1.11
         version: 4.1.11
@@ -36,6 +33,9 @@ importers:
       '@types/three':
         specifier: ^0.179.0
         version: 0.179.0
+      lil-gui:
+        specifier: ^0.20.0
+        version: 0.20.0
       svelte:
         specifier: ^5.35.5
         version: 5.38.0

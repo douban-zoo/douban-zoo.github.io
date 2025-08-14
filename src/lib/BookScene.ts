@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import * as dat from 'lil-gui';
 import { config, assets, palette } from '../config';
 import gsap from 'gsap';
 import { IconManager } from './IconManager';
@@ -25,7 +24,6 @@ export class BookScene {
   private decorationPairs: DecorationPair[][] = [];
   private ambientLight: THREE.AmbientLight = new THREE.AmbientLight(0xffffff, 1.8);
   private directionalLights: THREE.DirectionalLight[] = [];
-  private gui: dat.GUI;
 
   private videoOverlayManager: VideoOverlayManager;
   private iconManager: IconManager;
@@ -76,7 +74,7 @@ export class BookScene {
     this.container.appendChild(this.renderer.domElement);
 
     this.setUpLight();
-    // this.setupLightControls();
+    this.setupLightControls();
 
     this.handleResize();  //FIXME: 现在这个 handleResize 不可以放在后面执行
     window.addEventListener('resize', () => this.handleResize());
@@ -107,26 +105,31 @@ export class BookScene {
   }
 
   private setupLightControls() {
-    this.gui = new dat.GUI({ autoPlace: true });
-    const lightFolder = this.gui.addFolder('Lighting');
+    if (!isDev()) return;
 
-    const ambientFolder = lightFolder.addFolder('Ambient Light');
-    ambientFolder.addColor({ color: '#ffffff' }, 'color').onChange((value) => {
-      this.ambientLight.color.set(value);
-    });
-    ambientFolder.add(this.ambientLight, 'intensity', 0, 4, 0.01);
+    import('lil-gui').then((dat) => {
+      const gui = new dat.GUI({ autoPlace: true });
+      const lightFolder = gui.addFolder('Lighting');
 
-    const directionalFolder = lightFolder.addFolder('Directional Lights');
-    this.directionalLights.forEach((light, index) => {
-      const folder = directionalFolder.addFolder(`Light ${ index + 1 }`);
-      folder.addColor({ color: '#ffffff' }, 'color').onChange((value) => {
-        light.color.set(value);
+      const ambientFolder = lightFolder.addFolder('Ambient Light');
+      ambientFolder.addColor({ color: '#ffffff' }, 'color').onChange((value) => {
+        this.ambientLight.color.set(value);
       });
-      folder.add(light, 'intensity', 0, 4, 0.01);
-      folder.add(light.position, 'x', -10, 50, 0.1);
-      folder.add(light.position, 'y', -10, 50, 0.1);
-      folder.add(light.position, 'z', -10, 50, 0.1);
+      ambientFolder.add(this.ambientLight, 'intensity', 0, 4, 0.01);
+
+      const directionalFolder = lightFolder.addFolder('Directional Lights');
+      this.directionalLights.forEach((light, index) => {
+        const folder = directionalFolder.addFolder(`Light ${ index + 1 }`);
+        folder.addColor({ color: '#ffffff' }, 'color').onChange((value) => {
+          light.color.set(value);
+        });
+        folder.add(light, 'intensity', 0, 4, 0.01);
+        folder.add(light.position, 'x', -10, 50, 0.1);
+        folder.add(light.position, 'y', -10, 50, 0.1);
+        folder.add(light.position, 'z', -10, 50, 0.1);
+      });
     });
+
   }
 
 
@@ -354,8 +357,6 @@ export class BookScene {
     if (this.renderer.domElement && this.container.contains(this.renderer.domElement)) {
       this.container.removeChild(this.renderer.domElement);
     }
-
-    this.gui?.destroy();
 
     (this.scene as any) = null;
     (this.camera as any) = null;

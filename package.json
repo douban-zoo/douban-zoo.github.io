@@ -17,12 +17,12 @@
     "svelte": "^5.35.5",
     "svelte-check": "^4.2.2",
     "typescript": "~5.8.3",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "lil-gui": "^0.20.0"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",
     "gsap": "^3.13.0",
-    "lil-gui": "^0.20.0",
     "tailwindcss": "^4.1.11",
     "three": "^0.179.1"
   }
