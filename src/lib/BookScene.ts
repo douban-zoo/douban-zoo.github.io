@@ -3,8 +3,9 @@ import * as dat from 'lil-gui';
 import { config, assets, palette } from '../config';
 import gsap from 'gsap';
 import { IconManager } from './IconManager';
-import { VideoOverlayManager } from '../utils/video';
+import { VideoOverlayManager } from './VideoOverlayManager';
 import { isDev } from "../utils/env";
+import { currentPage } from '../store';
 
 type DecorationPair = {
   front: THREE.Mesh;
@@ -31,7 +32,6 @@ export class BookScene {
 
   private readonly perSegment = 1 / config.numPages;
 
-  private currentPage = 0;
   private lastBgUpdate = 0;
 
   private isMobile: boolean;
@@ -213,7 +213,7 @@ export class BookScene {
       }
     }
 
-    this.currentPage = Math.round(pProgress);
+    currentPage.set(Math.round(pProgress));
 
     for (let i = 0;i < config.numPages;i++) {
       const page = this.pages[i];
@@ -261,7 +261,6 @@ export class BookScene {
       });
     }
 
-    this.iconManager.update(this.currentPage);
   }
 
   private getCameraTargetY(): number {
@@ -343,7 +342,7 @@ export class BookScene {
       this.container.removeChild(this.renderer.domElement);
     }
 
-    this.gui.destroy();
+    this.gui?.destroy();
 
     (this.scene as any) = null;
     (this.camera as any) = null;

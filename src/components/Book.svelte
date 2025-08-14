@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from 'svelte';
   import {gsap} from 'gsap';
-  import {BookScene} from './BookScene';
+  import {BookScene} from '../lib/BookScene';
   import {config} from '../config';
 
   let container: HTMLDivElement;

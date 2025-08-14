@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
+import { get } from 'svelte/store';
 import { config, assets, getPageId } from '../config';
 import { playAudio } from '../utils/audios';
-import { VideoOverlayManager } from '../utils/video';
+import { VideoOverlayManager } from './VideoOverlayManager';
+import { currentPage } from '../store';
 
 
 export class IconManager {
@@ -19,7 +21,6 @@ export class IconManager {
   private mouse = new THREE.Vector2();
   private isMobile: boolean;
   private isLayoutVertical: boolean = false;
-  private currentPage: number = 0;
   private pageId: string = '';
 
   private photoContainer: HTMLDivElement;
@@ -44,6 +45,10 @@ export class IconManager {
     this.isMobile = this.container.clientWidth < 448;
     this.group = new THREE.Group();
     this.scene.add(this.group);
+
+    currentPage.subscribe((page) => {
+      this.update(page);
+    });
 
     this.photoContainer = document.getElementById('photo-overlay-container') as HTMLDivElement;
     if (!this.photoContainer) {
@@ -92,11 +97,9 @@ export class IconManager {
 
   public update(currentPage: number) {
     if (!this.videoIcon || !this.audioIcon || !this.photoIcon) return;
-    if (this.currentPage === currentPage) return;
 
     this.clearAllPhotos();
 
-    this.currentPage = currentPage;
     this.pageId = getPageId(currentPage);
 
     gsap.to(this.videoIcon.material, {
@@ -264,7 +267,7 @@ export class IconManager {
     const visibleIcons: THREE.Mesh[] = [];
     if ((this.videoIcon.material as THREE.MeshBasicMaterial).opacity > 0) visibleIcons.push(this.videoIcon);
     if ((this.audioIcon.material as THREE.MeshBasicMaterial).opacity > 0) visibleIcons.push(this.audioIcon);
-    if ((this.photoIcon.material as THREE.MeshBasicMaterial).opacity > 0) visibleIcons.push(this.photoIcon);
+  if ((this.photoIcon.material as THREE.MeshBasicMaterial).opacity > 0) visibleIcons.push(this.photoIcon);
 
     if (visibleIcons.length === 0) return;
 
@@ -273,11 +276,11 @@ export class IconManager {
     if (intersects.length > 0) {
       const clicked = intersects[0].object;
       if (clicked === this.videoIcon) {
-        this.videoOverlayManager.show(assets.media[this.currentPage]?.video || '');
+        this.videoOverlayManager.show(assets.media[get(currentPage)]?.video || '');
       } else if (clicked === this.audioIcon) {
-        playAudio(assets.media[this.currentPage]?.audio || '');
+        playAudio(assets.media[get(currentPage)]?.audio || '');
       } else if (clicked === this.photoIcon) {
-        const photoCount = assets.media[this.currentPage]?.photo || 0;
+        const photoCount = assets.media[get(currentPage)]?.photo || 0;
         if (photoCount > 0) {
           const randomIndex = Math.floor(Math.random() * photoCount) + 1;
           const imagePath = `/imgs/${ this.pageId }/${ randomIndex }.png`;
