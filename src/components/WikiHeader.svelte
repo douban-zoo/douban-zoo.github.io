@@ -2,6 +2,9 @@
   import {onMount, onDestroy} from 'svelte';
   import {currentPage} from '../store';
   import {wikis} from '../config';
+  import {fade, fly} from 'svelte/transition';
+  import Scroll from '../assets/scroll.svg?raw';
+  import Close from '../assets/close.svg?raw';
   import gsap from 'gsap';
 
   let visible = true;
@@ -46,20 +49,38 @@
   }
 
   onMount(() => {
+    document.addEventListener('click', handleClick);
     setTimeout(scroll, 50);
+    return () => {
+      document.removeEventListener('click', handleClick);
+    };
   });
-
   onDestroy(() => {
     if (ticker) ticker.kill();
   });
+
+  function handleClick(event: MouseEvent) {
+    const isTextInteraction = window.getSelection()?.toString();
+    if (showModal && (event.target as HTMLElement).closest('#wiki-modal') && !isTextInteraction) {
+      showModal = false;
+    }
+  }
 </script>
 
 {#if visible && wikiText}
-  <div class="fixed top-0 left-0 w-full bg-white/70 backdrop-blur-sm shadow-xs z-10 h-8 flex items-center">
+  <div
+    class="fixed top-0 left-0 w-full text-[var(--textColor)] bg-white/70 backdrop-blur-sm shadow-xs z-10 h-8 flex items-center"
+  >
+    <button
+      class="pl-1 w-9 cursor-pointer"
+      on:click={() => (showModal = true)}
+    >
+      {@html Scroll}
+    </button>
     <div class="relative overflow-hidden flex-1 h-full">
       <div
         bind:this={textEl}
-        class="absolute whitespace-nowrap text-sm lg:text-base will-change-transform text-[var(--textColor)] top-0 left-24 h-full flex items-center"
+        class="absolute whitespace-nowrap text-sm lg:text-base will-change-transform top-0 left-12 h-full flex items-center"
       >
         {#each Array(2) as _}
           {#each lines as line}
@@ -69,21 +90,28 @@
         {/each}
       </div>
     </div>
+    <button
+      class="pr-1 w-8 cursor-pointer"
+      on:click={() => (visible = false)}
+    >
+      {@html Close}
+    </button>
   </div>
 {/if}
-
 {#if showModal}
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-lg max-w-lg w-full p-6">
-      <div class="text-lg font-semibold mb-4">Wiki</div>
-      <pre class="whitespace-pre-wrap text-sm text-gray-700">{wikiText}</pre>
-      <div class="mt-4 text-right">
-        <button
-          class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          on:click={() => (showModal = false)}
-        >
-          close
-        </button>
+  <div
+    class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-lg"
+    id="wiki-modal"
+    transition:fade={{duration: 150}}
+  >
+    <div
+      class="rounded-lg px-4 md:px-20 text-[var(--textColor)] text-center overflow-y-auto py-6 max-h-[90vh]"
+      transition:fly={{y: 20, duration: 300}}
+    >
+      <div class="space-y-4 text-2xl lg:text-4xl leading-9 md:leading-14 font-sans italic">
+        {#each lines as line}
+          <p>{line}</p>
+        {/each}
       </div>
     </div>
   </div>

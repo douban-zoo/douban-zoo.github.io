@@ -74,7 +74,7 @@ export class BookScene {
     this.container.appendChild(this.renderer.domElement);
 
     this.setUpLight();
-    this.setupLightControls();
+    // this.setupLightControls();
 
     this.handleResize();  //FIXME: 现在这个 handleResize 不可以放在后面执行
     window.addEventListener('resize', () => this.handleResize());

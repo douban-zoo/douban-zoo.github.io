@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Songti SC", "STSong", serif;
+}
+
 body {
   @apply bg-[color:var(--bgColor,#52AC6A)] m-0 p-0 overflow-hidden;
 }
