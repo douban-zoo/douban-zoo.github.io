@@ -37,8 +37,8 @@ export class BookScene {
   private normalCameraZ: number = 6;
   private closedCameraZ: number = 4;
 
-  private initialCameraOffset = isDev() ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(5, -5, -4);
-  private initialCameraUp = isDev() ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(-2, 3, 3);
+  private initialCameraOffset = isDev() ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(4, -4, -2);
+  private initialCameraUp = isDev() ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(-2, 4, 3);
   // FIXME: mobile dev 视角有问题
 
   public openingAnimationStatus: 'none' | 'playing' | 'played' = isDev() ? 'played' : 'none';
@@ -81,11 +81,14 @@ export class BookScene {
 
     this.camera.position.add(this.initialCameraOffset);
     this.camera.up.copy(this.initialCameraUp);
-    this.camera.lookAt(0, 0, 0);
+
+    this.camera.lookAt(
+      isDev() ? new THREE.Vector3(0, 0, 0) :
+        this.isMobile ? new THREE.Vector3(1.2, 0, 0) : new THREE.Vector3(0, 2, -2));
 
     // helper
-    // const axesHelper = new THREE.AxesHelper(5);
-    // this.scene.add(axesHelper);
+    const axesHelper = new THREE.AxesHelper(5);
+    this.scene.add(axesHelper);
 
   }
 
@@ -166,7 +169,7 @@ export class BookScene {
     const targetLookAt = new THREE.Vector3(config.pageWidth / 2, targetCameraY, 0);
     const targetUp = new THREE.Vector3(0, 1, 0);
 
-    const currentLookAt = new THREE.Vector3(0, 0, 0);
+    const currentLookAt = this.camera.getWorldDirection(new THREE.Vector3()).clone().add(this.camera.position);
     const currentUp = this.camera.up.clone();
 
     const tl = gsap.timeline({
@@ -174,8 +177,8 @@ export class BookScene {
         this.openingAnimationStatus = 'played';
       },
       onUpdate: () => {
-        this.camera.up.copy(currentUp);
         this.camera.lookAt(currentLookAt);
+        this.camera.up.copy(currentUp);
       },
       defaults: {
         duration: 2.5,

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Songti SC", "STSong", serif;
+  --font-serif: "Songti SC", "STSong", serif;
 }
 
 body {
@@ -10,7 +10,7 @@ body {
 #photo-overlay-container {
   @apply absolute w-full h-full pointer-events-none overflow-hidden left-0 top-0;
 }
-
+ 
 .draggable-photo {
       --shadow-offset: 5px;
       --shadow-color: #eee;

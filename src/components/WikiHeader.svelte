@@ -21,6 +21,11 @@
     scroll();
   }
 
+  $: if (!currentPage) {
+    visible = false;
+    showModal = false;
+  }
+
   async function scroll() {
     if (!textEl) return;
     gsap.killTweensOf(textEl);
@@ -77,7 +82,7 @@
     >
       {@html Scroll}
     </button>
-    <div class="relative overflow-hidden flex-1 h-full">
+    <div class="relative overflow-hidden flex-1 h-full -ml-2 -mr-2">
       <div
         bind:this={textEl}
         class="absolute whitespace-nowrap text-sm lg:text-base will-change-transform top-0 left-12 h-full flex items-center"
@@ -100,13 +105,13 @@
 {/if}
 {#if showModal}
   <div
-    class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-lg"
+    class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center backdrop-blur-lg  will-change-transform will-change-opacity"
     id="wiki-modal"
-    transition:fade={{duration: 150}}
+    transition:fade={{duration: 200}}
   >
     <div
       class="rounded-lg px-4 md:px-20 text-[var(--textColor)] text-center overflow-y-auto py-6 max-h-[90vh]"
-      transition:fly={{y: 20, duration: 300}}
+      transition:fly={{y: 20, duration: 200}}
     >
       <div class="space-y-4 text-2xl lg:text-4xl leading-9 md:leading-14 font-sans italic">
         {#each lines as line}
