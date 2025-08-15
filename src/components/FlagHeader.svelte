@@ -1,11 +1,11 @@
+<!--  留着备用， 万一可以变得很可爱呢 -->
+
 <script lang="ts">
   import {onMount, onDestroy} from 'svelte';
   import {currentPage} from '../store';
   import {wikis} from '../config';
-  import {fade, fly} from 'svelte/transition';
-  import Scroll from '../assets/scroll.svg?raw';
-  import Close from '../assets/close.svg?raw';
   import gsap from 'gsap';
+  import FishFlag from '../assets/flag.svg?raw';
 
   let visible = true;
   let showModal = false;
@@ -56,10 +56,26 @@
   onMount(() => {
     document.addEventListener('click', handleClick);
     setTimeout(scroll, 50);
+
+    setTimeout(() => {
+      document.querySelectorAll<HTMLElement>('.koi-flag').forEach((el, i) => {
+        gsap.to(el, {
+          y: gsap.utils.random(-12, 12),
+          x: gsap.utils.random(-6, 6),
+          duration: gsap.utils.random(0.8, 1.5),
+          yoyo: true,
+          repeat: -1,
+          ease: 'sine.inOut',
+          delay: i * 0.1,
+        });
+      });
+    }, 100);
+
     return () => {
       document.removeEventListener('click', handleClick);
     };
   });
+
   onDestroy(() => {
     if (ticker) ticker.kill();
   });
@@ -73,57 +89,19 @@
 </script>
 
 {#if visible && wikiText}
-  <div
-    class="fixed top-0 left-0 w-full bg-white/80 backdrop-blur-sm shadow-xs z-10 h-8 flex items-center
-             [mask-image:linear-gradient(to_right,transparent,white_65%,white)]
-            [-webkit-mask-image:linear-gradient(to_right,transparent,white_65%,white)]
-            md:[mask-image:linear-gradient(to_right,transparent,white_50%,white)]
-            md:[-webkit-mask-image:linear-gradient(to_right,transparent,white_50%,white)]
-           [mask-repeat:no-repeat]
-           [mask-size:100%_100%]
-           [-webkit-mask-repeat:no-repeat]
-           [-webkit-mask-size:100%_100%]"
-  >
-    <div class="relative overflow-hidden flex-1 h-full ml-2 -mr-1">
+  <div class="fixed top-0 left-0 w-full text-[var(--textColor)] backdrop-blur-sm z-10 h-12 flex items-center">
+    <div class="relative overflow-visible flex-1 h-full -ml-2 -mr-2">
       <div
         bind:this={textEl}
-        class="absolute whitespace-nowrap text-sm lg:text-base will-change-transform top-0 left-36 lg:left-48 h-full flex items-center"
+        class="absolute whitespace-nowrap text-sm lg:text-base will-change-transform top-0 left-12 h-full flex items-center gap-2"
       >
         {#each Array(2) as _}
           {#each lines as line}
-            <span class="pl-3">•&nbsp;</span>
-            {line}
+            <div class="koi-flag relative flex items-center justify-center w-48 h-[40px] mx-2">
+              {@html FishFlag}
+              <span class="absolute text-xs left-4 text-center top-[14px]">{line}</span>
+            </div>
           {/each}
-        {/each}
-      </div>
-    </div>
-    <button
-      class="w-7 cursor-pointer z-20"
-      on:click={() => (showModal = true)}
-    >
-      {@html Scroll}
-    </button>
-    <button
-      class="w-8 cursor-pointer"
-      on:click={() => (visible = false)}
-    >
-      {@html Close}
-    </button>
-  </div>
-{/if}
-{#if showModal}
-  <div
-    class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center backdrop-blur-lg will-change-transform will-change-opacity"
-    id="wiki-modal"
-    transition:fade={{duration: 200}}
-  >
-    <div
-      class="rounded-lg px-4 md:px-20 text-[var(--textColor)] text-center overflow-y-auto py-6 max-h-[90vh]"
-      transition:fly={{y: 20, duration: 200}}
-    >
-      <div class="space-y-4 text-2xl lg:text-4xl leading-9 md:leading-14 font-sans italic">
-        {#each lines as line}
-          <p>{line}</p>
         {/each}
       </div>
     </div>

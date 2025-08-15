@@ -4,7 +4,7 @@
   import WikiHeader from './components/WikiHeader.svelte';
 </script>
 
-<main class="w-screen overflow-hidden h-screen">
+<main class="w-screen overflow-hidden h-screen text-[var(--textColor)]">
   <WikiHeader />
   <VideoOverlay />
   <div id="photo-overlay-container" />
