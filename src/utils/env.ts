@@ -1,6 +1,6 @@
 
 export function isDev() {
-  // return false;
+  return false;
   try {
     return import.meta.env.DEV ;
   } catch {

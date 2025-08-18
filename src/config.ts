@@ -81,6 +81,9 @@ export function getPageId(index: number) {
 }
 
 export const assets = {
+  fonts:{
+    simsun: asset('fonts/SimSun_Regular.json'),
+  },
   media: [
     {},
     {
@@ -113,7 +116,10 @@ export const assets = {
     audio: asset('icons/audio.png'),
     photo: asset('icons/folder.png'),
   },
-  normalMap: {
+  textures: {
+    'rainbow': asset('imgs/textures/rainbow.png'),
+  },
+    normalMap: {
     cover: asset('imgs/textures/cover-normal.png'),
     paper: asset('imgs/textures/paper-normal.png'),
   },

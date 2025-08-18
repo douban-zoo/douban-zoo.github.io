@@ -5,6 +5,8 @@ import { IconManager } from './IconManager';
 import { VideoOverlayManager } from './VideoOverlayManager';
 import { isDev } from "../utils/env";
 import { currentPage } from '../store';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
 type DecorationPair = {
   front: THREE.Mesh;
@@ -24,6 +26,7 @@ export class BookScene {
   private decorationPairs: DecorationPair[][] = [];
   private ambientLight: THREE.AmbientLight = new THREE.AmbientLight(0xffffff, 1.8);
   private directionalLights: THREE.DirectionalLight[] = [];
+  private homeTitle: THREE.Group | null = null;
 
   private videoOverlayManager: VideoOverlayManager;
   private iconManager: IconManager;
@@ -39,7 +42,6 @@ export class BookScene {
 
   private initialCameraOffset = isDev() ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(4, -4, -2);
   private initialCameraUp = isDev() ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(-2, 4, 3);
-  // FIXME: mobile dev 视角有问题
 
   public openingAnimationStatus: 'none' | 'playing' | 'played' = isDev() ? 'played' : 'none';
 
@@ -54,7 +56,6 @@ export class BookScene {
 
     this.renderer = new THREE.WebGLRenderer({ antialias: !this.isMobile, alpha: true, logarithmicDepthBuffer: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.maxPixelRatio));
-
 
     this.videoOverlayManager = new VideoOverlayManager(() => { }, () => { });
 
@@ -74,9 +75,8 @@ export class BookScene {
     this.container.appendChild(this.renderer.domElement);
 
     this.setUpLight();
-    // this.setupLightControls();
 
-    this.handleResize();  //FIXME: 现在这个 handleResize 不可以放在后面执行
+    this.handleResize();
     window.addEventListener('resize', () => this.handleResize());
 
     this.camera.position.add(this.initialCameraOffset);
@@ -85,21 +85,10 @@ export class BookScene {
     this.camera.lookAt(
       isDev() ? new THREE.Vector3(0, 0, 0) :
         this.isMobile ? new THREE.Vector3(1.2, 0, 0) : new THREE.Vector3(0, 2, -2));
-
-    // helper
-    // const axesHelper = new THREE.AxesHelper(5);
-    // this.scene.add(axesHelper);
-
   }
 
   private setUpLight() {
     this.scene.add(this.ambientLight);
-
-
-    // const lLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    // lLight.position.set(-5, 0, 8);
-    // this.scene.add(lLight);
-    // this.directionalLights.push(lLight);
 
     const rLight = new THREE.DirectionalLight(0xffffff, 0.6);
     rLight.position.set(0, 0, 8);
@@ -132,17 +121,16 @@ export class BookScene {
         folder.add(light.position, 'z', -10, 50, 0.1);
       });
     });
-
   }
-
 
   public async init() {
     const textureLoader = new THREE.TextureLoader();
+    const fontLoader = new FontLoader();
     const loadPromises = assets.pages.map((url) => new Promise((resolve) => textureLoader.load(url, resolve)));
     await Promise.all(loadPromises);
 
     for (let i = 0;i < config.numPages;i++) {
-      const page = this._createPage(i, textureLoader);
+      const page = this._createPage(i, textureLoader, fontLoader);
       this.book.add(page);
       this.pages.push(page);
     }
@@ -191,8 +179,20 @@ export class BookScene {
     tl.to(this.camera.position, { ...targetPosition }, startTime);
     tl.to(currentLookAt, { ...targetLookAt }, startTime);
     tl.to(currentUp, { ...targetUp }, startTime);
+    if (this.homeTitle) {
+      this.homeTitle.children.forEach((child) => {
+        tl.to((child as THREE.Mesh).material, {
+          opacity: 0,
+          duration: 2,
+          ease: 'power3.inOut',
+          onComplete: () => {
+            if (this.homeTitle) this.book.remove(this.homeTitle);
+          }
+        }, startTime);
+      }
+      );
+    }
   }
-
 
   get openingAnimationPlayed() {
     return this.openingAnimationStatus === 'played';
@@ -266,7 +266,6 @@ export class BookScene {
         pair.back.position.x = -pair.offset.x - parallaxShift;
       });
     }
-
   }
 
   private getCameraTargetY(): number {
@@ -281,6 +280,7 @@ export class BookScene {
       ? 0
       : -0.25 * (visibleHeight - config.pageHeight);
   }
+
   private updateBgColor(progress: number) {
     const now = performance.now();
     if (now - this.lastBgUpdate < 16) return;
@@ -314,7 +314,6 @@ export class BookScene {
     document.documentElement.style.setProperty('--bgColor', color.getStyle());
     document.documentElement.style.setProperty('--textColor', textColor.getStyle());
   }
-
 
   public handleResize() {
     const width = this.container.clientWidth;
@@ -354,7 +353,6 @@ export class BookScene {
     this.decorationPairs.length = 0;
 
     this.iconManager.dispose();
-
     this.renderer.dispose();
 
     if (this.renderer.domElement && this.container.contains(this.renderer.domElement)) {
@@ -365,10 +363,9 @@ export class BookScene {
     (this.camera as any) = null;
   }
 
-  private _createPage(i: number, textureLoader: THREE.TextureLoader): THREE.Group {
+  private _createPage(i: number, textureLoader: THREE.TextureLoader, fontLoader: FontLoader): THREE.Group {
     const pivot = new THREE.Group();
 
-    // TODO: replace bg texture for better rounded corner
     const geometry = this._createRoundedBoxGeometry(config.pageWidth, config.pageHeight, config.pageDepth, 0.12, 64);
 
     const frontTexture = textureLoader.load(assets.pages[i]);
@@ -421,8 +418,71 @@ export class BookScene {
 
     pivot.position.z = (config.numPages - i) * config.pageDepth;
 
+    if (i === 0) {
+      this._createHomeTitle(i, fontLoader);
+    }
+
     return pivot;
   }
+
+  private _createHomeTitle(i: number, fontLoader: FontLoader) {
+    const rainbowTexteure = new THREE.TextureLoader().load(assets.textures.rainbow, (texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      // texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      // texture.rotation = Math.PI /3;
+    });
+
+    const sideConfig = {
+      fontSize: this.isMobile ? config.pageHeight * 0.16 : config.pageHeight * 0.2,
+      position: this.isMobile ? new THREE.Vector3(-config.pageWidth / 2 + 0.4, 0, (config.numPages - i) * config.pageDepth + 0.01) : new THREE.Vector3(-config.pageWidth / 2, 0, (config.numPages - i) * config.pageDepth + 0.01),
+
+    };
+
+    const topConfig = {
+      fontSize: this.isMobile ? config.pageHeight * 0.07 : config.pageHeight * 0.08,
+      position: this.isMobile ? new THREE.Vector3(-0.15, config.pageHeight / 2 + 0.6, (config.numPages - i) * config.pageDepth - 0.3) : new THREE.Vector3(-0.2, config.pageHeight / 2 + 0.4, (config.numPages - i) * config.pageDepth + 0.01),
+    };
+
+
+
+    fontLoader.load(assets.fonts.simsun, (font) => {
+
+      const sideTextGeometry = new TextGeometry('豆\n发', {
+        font: font,
+        size: sideConfig.fontSize,
+        depth: 0.05,
+        curveSegments: 12,
+        bevelEnabled: false
+      });
+      const textMaterial = new THREE.MeshStandardMaterial({
+        map: rainbowTexteure,
+        transparent: true,
+        metalness: 0.02,
+        roughness: 0.1,
+      });
+      const sideTextMesh = new THREE.Mesh(sideTextGeometry, textMaterial);
+      sideTextMesh.position.set(sideConfig.position.x, sideConfig.position.y, sideConfig.position.z);
+
+      const titleTextGeometry = new TextGeometry('（2005）第 008 号', {
+        font: font,
+        size: topConfig.fontSize,
+        depth: 0.05,
+        curveSegments: 12,
+        bevelEnabled: false
+      });
+      const titleTextMesh = new THREE.Mesh(titleTextGeometry, textMaterial);
+      titleTextMesh.position.set(topConfig.position.x, topConfig.position.y, topConfig.position.z);
+      titleTextMesh.rotation.x = Math.PI / 4;
+
+      this.homeTitle = new THREE.Group();
+      this.homeTitle.add(sideTextMesh);
+      this.homeTitle.add(titleTextMesh);
+      this.book.add(this.homeTitle);
+
+    });
+  }
+
   private _createDecorations(i: number, textureLoader: THREE.TextureLoader, z: number): DecorationPair[] {
     const decorations = assets.decorations[i] || [];
     const pairs: DecorationPair[] = [];
@@ -483,6 +543,7 @@ export class BookScene {
     });
     return pairs;
   }
+
   private _createRoundedBoxGeometry(width: number, height: number, depth: number, radius: number, segments: number): THREE.BoxGeometry {
     const geometry = new THREE.BoxGeometry(width, height, depth, segments, segments, segments);
     const position = geometry.attributes.position;
