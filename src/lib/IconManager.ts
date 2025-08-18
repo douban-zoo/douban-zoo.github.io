@@ -95,6 +95,12 @@ export class IconManager {
     this.updatePosition();
   }
 
+  private prevMediaState: { video: boolean; audio: boolean; photo: boolean } = {
+    video: false,
+    audio: false,
+    photo: false,
+  };
+
   public update(currentPage: number) {
     if (!this.videoIcon || !this.audioIcon || !this.photoIcon) return;
 
@@ -102,25 +108,57 @@ export class IconManager {
 
     this.pageId = getPageId(currentPage);
 
-    gsap.to(this.videoIcon.material, {
-      duration: 0.05,
-      delay: 0.05,
-      opacity: assets.media[currentPage]?.video ? 1 : 0,
-      ease: 'power2.inOut',
-    });
-    gsap.to(this.audioIcon.material, {
-      duration: 0.05,
-      delay: 0.05,
-      opacity: assets.media[currentPage]?.audio ? 1 : 0,
-      ease: 'power2.inOut',
-    });
-    gsap.to(this.photoIcon.material, {
-      duration: 0.05,
-      delay: 0.05,
-      opacity: assets.media[currentPage]?.photo ? 1 : 0,
-      ease: 'power2.inOut',
-    });
+    const currMedia = {
+      video: !!assets.media[currentPage]?.video,
+      audio: !!assets.media[currentPage]?.audio,
+      photo: !!assets.media[currentPage]?.photo,
+    };
+
+    const setAnim = (icon: THREE.Mesh, prev: boolean, curr: boolean, delay: number) => {
+      if (!prev && curr) {
+        gsap.fromTo(
+          icon.position,
+          { x: icon.position.x + 0.3 },
+          {
+            x: icon.position.x,
+            duration: 0.6,
+            delay,
+            ease: "power2.out",
+          }
+        );
+        gsap.to(icon.material, {
+          opacity: 1,
+          duration: 0.3,
+          delay,
+          ease: "power2.out",
+        });
+      } else if (prev && !curr) {
+        gsap.to(icon.position, {
+          x: icon.position.x + 0.3,
+          duration: 0.3,
+          delay,
+          ease: "power2.in",
+          onComplete: () => {
+            icon.position.x -= 0.3;
+          },
+        });
+        gsap.to(icon.material, {
+          opacity: 0,
+          duration: 0.3,
+          delay,
+          ease: "power2.in",
+        });
+      }
+    };
+
+    setAnim(this.videoIcon, this.prevMediaState.video, currMedia.video, 0.1);
+    setAnim(this.audioIcon, this.prevMediaState.audio, currMedia.audio, 0.2);
+    setAnim(this.photoIcon, this.prevMediaState.photo, currMedia.photo, 0.3);
+
+    this.prevMediaState = currMedia;
   }
+
+
 
   public onResize() {
     this.isMobile = this.container.clientWidth < 448;

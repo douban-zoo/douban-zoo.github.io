@@ -1,5 +1,6 @@
 <script lang="ts">
   import Book from './components/Book.svelte';
+    import Footer from './components/Footer.svelte';
   import VideoOverlay from './components/VideoOverlay.svelte';
   import WikiHeader from './components/WikiHeader.svelte';
 </script>
@@ -9,4 +10,5 @@
   <VideoOverlay />
   <div id="photo-overlay-container" />
   <Book />
+  <Footer />
 </main>

@@ -104,7 +104,7 @@ export const assets = {
       photo: 10,
     },
     {
-      video: asset('videos/xuguanghan.mp4'),
+      video: asset('videos/xgh.webm'),
       photo: 20,
     },
   ],

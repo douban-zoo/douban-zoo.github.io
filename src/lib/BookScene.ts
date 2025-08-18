@@ -87,8 +87,8 @@ export class BookScene {
         this.isMobile ? new THREE.Vector3(1.2, 0, 0) : new THREE.Vector3(0, 2, -2));
 
     // helper
-    const axesHelper = new THREE.AxesHelper(5);
-    this.scene.add(axesHelper);
+    // const axesHelper = new THREE.AxesHelper(5);
+    // this.scene.add(axesHelper);
 
   }
 
