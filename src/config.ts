@@ -31,7 +31,7 @@ export const pageIds = [
   'jongjong',
   'pupu',
   'tianchengzi',
-  'meidi'
+  'xuguanghan'
 ]
 
 export const wikis = [
@@ -65,7 +65,15 @@ export const wikis = [
   如果没有在准时看到食物，一般会登上置物架自取，从而展现出了惊人的咬合力，可空口叼起大概1kg的肉干。
 不喜欢的乐队：Imagine Dragons（听到会展示出飞机耳，假装自己听不见，和听到大雨声表现一致）
 上过两天班，因为不喜欢出门而成为高等游“猫”。`
-  , ''
+  ,
+  `许光汉
+  618大促小狗
+  曾用名阿北
+  喜欢甜食和鸡肉
+  生父不详所以腿比一般柴要长长长长
+  下楼一圈就开嗨和主人一个体力
+  被嘲笑独蛋大使但其实是半隐睾啦！
+  目前已绝育成为忠实的姐妹团成员`
 ]
 
 export function getPageId(index: number) {
@@ -112,7 +120,7 @@ export const assets = {
     asset('imgs/bg/jongjong.png'),
     asset('imgs/bg/pupu.png'),
     asset('imgs/bg/tianchengzi.png'),
-    asset('imgs/bg/meidi.png'),
+    asset('imgs/bg/xgh.png'),
   ],
   decorations: [
     [],
@@ -132,7 +140,10 @@ export const assets = {
       { texture: asset('imgs/dec/tianchengzi1.png'), parallaxFactor: 0.3, offset: { x: 2.8, y: -0.13, z: 0.016 }, scale: 1.21 },
       { texture: asset('imgs/dec/tianchengzi2.png'), parallaxFactor: 0.2, offset: { x: 1.4, y: -0.5, z: 0.014 }, scale: 0.9 },
     ],
-    [],
+    [
+      { texture: asset('imgs/dec/xgh1.png'), parallaxFactor: 0.3, offset: { x: 2.85, y: -0.16, z: 0.014 }, scale: 1.52 },
+      { texture: asset('imgs/dec/xgh2.png'), parallaxFactor: 0.15, offset: { x: 1.29, y: -0.07, z: 0.016 }, scale: 1.25 },
+    ],
   ],
 };
 
@@ -143,6 +154,6 @@ export const palette = {
     '#88C1EF',
     '#1CB8C7',
     '#D86D1A',
-    '#F4CEE8',
+    '#F468AF',
   ]
 }
