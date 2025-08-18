@@ -103,7 +103,10 @@ export const assets = {
       video: asset('videos/tianchengzi-eat.webm'),
       photo: 10,
     },
-    {},
+    {
+      video: asset('videos/xuguanghan.mp4'),
+      photo: 20,
+    },
   ],
   icons: {
     video: asset('icons/video.png'),
