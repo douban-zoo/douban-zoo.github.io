@@ -20,7 +20,7 @@
     </div>
 
     <div class="text-xs text-center whitespace-pre-line hidden md:block max-w-md mb-[2px]">
-      If you are a former Douban employee and would like your pet
+      If you are a ( former ) Douban employee and would like your pet
       to be featured on the site, please reach out to <a
         href="mailto:anigiscur@gmail.com">Yanxin</a
       >.
