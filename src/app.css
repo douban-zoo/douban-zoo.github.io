@@ -7,31 +7,65 @@
 body {
   @apply bg-[color:var(--bgColor,#52AC6A)] m-0 p-0 overflow-hidden;
 }
+
 #photo-overlay-container {
   @apply absolute w-full h-full pointer-events-none overflow-hidden left-0 top-0;
 }
- 
+
 .draggable-photo {
-      --shadow-offset: 5px;
-      --shadow-color: #eee;
-      --shadow-active-color: color-mix(in srgb, var(--bgColor) 50%, white);
+  --shadow-offset: 5px;
+  --shadow-color: #eee;
+  --shadow-active-color: color-mix(in srgb, var(--bgColor) 50%, white);
 
-      @apply absolute pointer-events-auto bg-contain bg-no-repeat cursor-grab opacity-0 animate-[fadeIn_0.3s_ease_forwards] active:cursor-grabbing will-change-transform;
+  @apply absolute pointer-events-auto bg-contain bg-no-repeat cursor-grab opacity-0 animate-[fadeIn_0.3s_ease_forwards] active:cursor-grabbing will-change-transform;
 
-    filter: drop-shadow(var(--shadow-offset) 0 0 var(--shadow-color)) drop-shadow(calc(var(--shadow-offset) * -1) 0 0 var(--shadow-color)) drop-shadow(0 var(--shadow-offset) 0 var(--shadow-color)) drop-shadow(0 calc(var(--shadow-offset) * -1) 0 var(--shadow-color));
+  filter: drop-shadow(var(--shadow-offset) 0 0 var(--shadow-color)) drop-shadow(calc(var(--shadow-offset) * -1) 0 0 var(--shadow-color)) drop-shadow(0 var(--shadow-offset) 0 var(--shadow-color)) drop-shadow(0 calc(var(--shadow-offset) * -1) 0 var(--shadow-color));
 
-    &:active {
-      filter: drop-shadow(var(--shadow-offset) 0 0 var(--shadow-active-color)) drop-shadow(calc(var(--shadow-offset) * -1) 0 0 var(--shadow-active-color)) drop-shadow(0 var(--shadow-offset) 0 var(--shadow-active-color)) drop-shadow(0 calc(var(--shadow-offset) * -1) 0 var(--shadow-active-color));
-    }
+  &:active {
+    filter: drop-shadow(var(--shadow-offset) 0 0 var(--shadow-active-color)) drop-shadow(calc(var(--shadow-offset) * -1) 0 0 var(--shadow-active-color)) drop-shadow(0 var(--shadow-offset) 0 var(--shadow-active-color)) drop-shadow(0 calc(var(--shadow-offset) * -1) 0 var(--shadow-active-color));
   }
+}
 
-  @media (max-width: 768px) {
-    .draggable-photo {
-      --shadow-offset: 3px;
-    }
+@media (max-width: 768px) {
+  .draggable-photo {
+    --shadow-offset: 3px;
   }
+}
+
 @keyframes fadeIn {
   to {
     opacity: 1;
   }
+}
+
+#loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #253b24;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  transition: opacity 0.5s ease-out;
+}
+
+.loading-container {
+  width: 80%;
+  max-width: 400px;
+  height: 8px;
+  background-color: #333;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+#loading-bar {
+  width: 100%;
+  height: 100%;
+  background-color: #ffe65a;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
 }

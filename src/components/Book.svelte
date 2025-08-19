@@ -18,7 +18,6 @@
 
   onMount(() => {
     if (!container) return;
-
     bookScene = new BookScene(container);
 
     let animation: number;
@@ -110,7 +109,7 @@
 
 <div
   bind:this={container}
-  class="cursor-grab touch-none w-[100vw] h-[100vh]"
+  class="cursor-grab touch-none w-screen min-w-screen h-screen min-h-screen"
   on:pointerdown={onPointerDown}
   on:pointermove={onPointerMove}
   on:pointerup={onPointerUp}

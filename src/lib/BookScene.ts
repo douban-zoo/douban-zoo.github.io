@@ -30,6 +30,9 @@ export class BookScene {
 
   private videoOverlayManager: VideoOverlayManager;
   private iconManager: IconManager;
+  private loadingManager: THREE.LoadingManager;
+
+  private renderable: boolean = false;
 
   private readonly perSegment = 1 / config.numPages;
 
@@ -54,9 +57,10 @@ export class BookScene {
 
     this.camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: !this.isMobile, alpha: true, logarithmicDepthBuffer: false });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.maxPixelRatio));
 
+    this.loadingManager = new THREE.LoadingManager();
     this.videoOverlayManager = new VideoOverlayManager(() => { }, () => { });
 
     this.iconManager = new IconManager(
@@ -76,6 +80,8 @@ export class BookScene {
 
     this.setUpLight();
     // this.setupLightControls();
+    this.setupLoadingManager();
+    this.setUpPositionAndRotation();
 
     window.addEventListener('resize', () => this.handleResize());
 
@@ -83,6 +89,37 @@ export class BookScene {
     // const axesHelper = new THREE.AxesHelper(5);
     // this.scene.add(axesHelper);
 
+  }
+
+  private setupLoadingManager() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loadingBar = document.getElementById('loading-bar');
+
+    if (!loadingOverlay || !loadingBar) {
+      console.error('Loading screen elements not found in the DOM.');
+      return;
+    }
+
+    this.loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+      const progressRatio = itemsLoaded / itemsTotal;
+      (loadingBar as HTMLElement).style.transform = `scaleX(${progressRatio})`;
+      console.log(`Loading: ${Math.round(progressRatio * 100)}%`);
+    };
+
+    this.loadingManager.onLoad = () => {
+
+      setTimeout(() => {
+        this.renderable = true;
+      }, 300);
+
+      gsap.to(loadingOverlay, {
+        opacity: 0,
+        duration: 1,
+        onComplete: () => {
+          loadingOverlay.style.visibility = 'hidden';
+        }
+      });
+    };
   }
 
   private setUpLight() {
@@ -121,26 +158,27 @@ export class BookScene {
     });
   }
 
+  private setUpPositionAndRotation() {
+    this.handleResize();
+    this.camera.position.add(this.initialCameraOffset);
+    this.camera.up.copy(this.initialCameraUp);
+
+    this.camera.lookAt(
+      isDev() ? new THREE.Vector3(0, 0, 0) :
+        this.isMobile ? new THREE.Vector3(1.2, 0, 0) : new THREE.Vector3(0, 2, -2));
+
+  }
+
   public async init() {
+    const textureLoader = new THREE.TextureLoader(this.loadingManager);
+    const fontLoader = new FontLoader(this.loadingManager);
 
-    const textureLoader = new THREE.TextureLoader();
-    const fontLoader = new FontLoader();
     const loadPromises = assets.pages.map((url) => new Promise((resolve) => textureLoader.load(url, resolve)));
+    await Promise.all(loadPromises);
 
-    await Promise.all(loadPromises).then(() => {
-
-      this.handleResize();
-      this.camera.position.add(this.initialCameraOffset);
-      this.camera.up.copy(this.initialCameraUp);
-
-      this.camera.lookAt(
-        isDev() ? new THREE.Vector3(0, 0, 0) :
-          this.isMobile ? new THREE.Vector3(1.2, 0, 0) : new THREE.Vector3(0, 2, -2));
-
-    });
-
+    this._createHomeMesh(fontLoader);
     for (let i = 0;i < config.numPages;i++) {
-      const page = this._createPage(i, textureLoader, fontLoader);
+      const page = this._createPage(i, textureLoader);
       this.book.add(page);
       this.pages.push(page);
     }
@@ -150,6 +188,7 @@ export class BookScene {
   }
 
   public render() {
+    if(!this.renderable) return;
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -330,6 +369,7 @@ export class BookScene {
   }
 
   public handleResize() {
+
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
 
@@ -377,7 +417,7 @@ export class BookScene {
     (this.camera as any) = null;
   }
 
-  private _createPage(i: number, textureLoader: THREE.TextureLoader, fontLoader: FontLoader): THREE.Group {
+  private _createPage(i: number, textureLoader: THREE.TextureLoader): THREE.Group {
     const pivot = new THREE.Group();
 
     const geometry = this._createRoundedBoxGeometry(config.pageWidth, config.pageHeight, config.pageDepth, 0.12, 64);
@@ -431,13 +471,9 @@ export class BookScene {
     this.decorationPairs[i] = pairs;
 
     pivot.position.z = (config.numPages - i) * config.pageDepth;
-
-    if (i === 0) {
-      this._createHomeMesh(fontLoader);
-    }
-
     return pivot;
   }
+
   private _createHomeMesh(fontLoader: FontLoader) {
     fontLoader.load(assets.fonts.solitreo, (font) => {
       this.homeTitle = new THREE.Group();
