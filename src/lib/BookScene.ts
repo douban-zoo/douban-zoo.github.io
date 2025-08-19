@@ -5,8 +5,8 @@ import { IconManager } from './IconManager';
 import { VideoOverlayManager } from './VideoOverlayManager';
 import { isDev } from "../utils/env";
 import { currentPage } from '../store';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import { FontLoader } from 'three/examples/jsm/Addons.js';
+import { TextGeometry } from 'three/examples/jsm/Addons.js';
 
 type DecorationPair = {
   front: THREE.Mesh;
@@ -75,8 +75,10 @@ export class BookScene {
     this.container.appendChild(this.renderer.domElement);
 
     this.setUpLight();
+    // this.setupLightControls();
+    this.handleResize();  //FIXME: 现在这个 handleResize 不可以放在后面执行
 
-    this.handleResize();
+
     window.addEventListener('resize', () => this.handleResize());
 
     this.camera.position.add(this.initialCameraOffset);
@@ -85,6 +87,12 @@ export class BookScene {
     this.camera.lookAt(
       isDev() ? new THREE.Vector3(0, 0, 0) :
         this.isMobile ? new THREE.Vector3(1.2, 0, 0) : new THREE.Vector3(0, 2, -2));
+
+
+    // helper
+    // const axesHelper = new THREE.AxesHelper(5);
+    // this.scene.add(axesHelper);
+
   }
 
   private setUpLight() {
@@ -179,19 +187,6 @@ export class BookScene {
     tl.to(this.camera.position, { ...targetPosition }, startTime);
     tl.to(currentLookAt, { ...targetLookAt }, startTime);
     tl.to(currentUp, { ...targetUp }, startTime);
-    if (this.homeTitle) {
-      this.homeTitle.children.forEach((child) => {
-        tl.to((child as THREE.Mesh).material, {
-          opacity: 0,
-          duration: 2,
-          ease: 'power3.inOut',
-          onComplete: () => {
-            if (this.homeTitle) this.book.remove(this.homeTitle);
-          }
-        }, startTime);
-      }
-      );
-    }
   }
 
   get openingAnimationPlayed() {
@@ -201,7 +196,7 @@ export class BookScene {
   public update(progress: number) {
     if (!this.pages.length) return;
 
-    if (!this.openingAnimationPlayed) {
+    if (!this.openingAnimationPlayed && progress > 0) {
       return;
     }
 
@@ -211,11 +206,28 @@ export class BookScene {
     const pageRotations: number[] = [];
     const pProgress = progress / perSegment;
 
-    if (progress < perSegment) {
+    if (progress > 0 && progress < perSegment) {
       this.camera.position.x = THREE.MathUtils.lerp(config.pageWidth / 2, 0, pProgress);
-
       if (this.isMobile) {
         this.camera.position.z = THREE.MathUtils.lerp(this.closedCameraZ, this.normalCameraZ, pProgress);
+      }
+      if (this.homeTitle) {
+        this.homeTitle.children.forEach((child) => {
+          child.children.forEach((c) => {
+            if (!(c instanceof THREE.Mesh)) {
+              return
+            }
+            gsap.to(c.material, {
+              opacity: 1 - pProgress * 2, duration: 0.5,
+              onComplete: () => {
+                if (c.material.opacity <= 0) {
+                  c.visible = false;
+                }
+              }
+            })
+          });
+        })
+
       }
     }
 
@@ -236,7 +248,7 @@ export class BookScene {
       const pageStartProgress = (i - 2) * perSegment;
       const pageEndProgress = (i + 2) * perSegment;
 
-      if (progress < pageStartProgress || progress > pageEndProgress) {
+      if (progress > 0 && progress < pageStartProgress || progress > pageEndProgress) {
         page.visible = false;
         continue;
       }
@@ -419,69 +431,109 @@ export class BookScene {
     pivot.position.z = (config.numPages - i) * config.pageDepth;
 
     if (i === 0) {
-      this._createHomeTitle(i, fontLoader);
+      this._createHomeMesh(fontLoader);
     }
 
     return pivot;
   }
-
-  private _createHomeTitle(i: number, fontLoader: FontLoader) {
-    const rainbowTexteure = new THREE.TextureLoader().load(assets.textures.rainbow, (texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      // texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      // texture.rotation = Math.PI /3;
-    });
-
-    const sideConfig = {
-      fontSize: this.isMobile ? config.pageHeight * 0.16 : config.pageHeight * 0.2,
-      position: this.isMobile ? new THREE.Vector3(-config.pageWidth / 2 + 0.4, 0, (config.numPages - i) * config.pageDepth + 0.01) : new THREE.Vector3(-config.pageWidth / 2, 0, (config.numPages - i) * config.pageDepth + 0.01),
-
-    };
-
-    const topConfig = {
-      fontSize: this.isMobile ? config.pageHeight * 0.07 : config.pageHeight * 0.08,
-      position: this.isMobile ? new THREE.Vector3(-0.15, config.pageHeight / 2 + 0.6, (config.numPages - i) * config.pageDepth - 0.3) : new THREE.Vector3(-0.2, config.pageHeight / 2 + 0.4, (config.numPages - i) * config.pageDepth + 0.01),
-    };
-
-
-
-    fontLoader.load(assets.fonts.simsun, (font) => {
-
-      const sideTextGeometry = new TextGeometry('豆\n发', {
-        font: font,
-        size: sideConfig.fontSize,
-        depth: 0.05,
-        curveSegments: 12,
-        bevelEnabled: false
-      });
-      const textMaterial = new THREE.MeshStandardMaterial({
-        map: rainbowTexteure,
-        transparent: true,
-        metalness: 0.02,
-        roughness: 0.1,
-      });
-      const sideTextMesh = new THREE.Mesh(sideTextGeometry, textMaterial);
-      sideTextMesh.position.set(sideConfig.position.x, sideConfig.position.y, sideConfig.position.z);
-
-      const titleTextGeometry = new TextGeometry('（2005）第 008 号', {
-        font: font,
-        size: topConfig.fontSize,
-        depth: 0.05,
-        curveSegments: 12,
-        bevelEnabled: false
-      });
-      const titleTextMesh = new THREE.Mesh(titleTextGeometry, textMaterial);
-      titleTextMesh.position.set(topConfig.position.x, topConfig.position.y, topConfig.position.z);
-      titleTextMesh.rotation.x = Math.PI / 4;
-
+  private _createHomeMesh(fontLoader: FontLoader) {
+    fontLoader.load(assets.fonts.solitreo, (font) => {
       this.homeTitle = new THREE.Group();
-      this.homeTitle.add(sideTextMesh);
-      this.homeTitle.add(titleTextMesh);
-      this.book.add(this.homeTitle);
 
+      // Douban box
+      const zooBoxGeo = new THREE.BoxGeometry(1.3, 0.4, 0.4);
+      const zooBoxMat = new THREE.MeshStandardMaterial({
+        color: 0xF9E36C,
+        roughness: 0.1,
+        transparent: true,
+        opacity: 1,
+      });
+      const zooBox = new THREE.Mesh(zooBoxGeo, zooBoxMat);
+      const zooGroup = new THREE.Group();
+      zooGroup.add(zooBox);
+
+      const zooTextGeo = new TextGeometry('Zoo', {
+        font: font,
+        size: 0.6,
+        depth: 0.05,
+        curveSegments: 12,
+      });
+      zooTextGeo.center();
+      const zooTextMat = new THREE.MeshStandardMaterial({
+        color: 0xFD9F69,
+        roughness: 0.2,
+        transparent: true,
+      });
+      const zooText = new THREE.Mesh(zooTextGeo, zooTextMat);
+      zooText.position.y = zooBoxGeo.parameters.height / 2 + 0.4;
+      zooText.position.z += 0.1;
+      zooGroup.add(zooText);
+
+      if (this.isMobile) {
+        zooGroup.position.set(config.pageWidth, 0.2, config.pageHeight * 0.8);
+        zooGroup.rotation.y = -Math.PI / 2;
+
+      } else {
+        zooGroup.position.set(config.pageWidth * 0.5, 0, 0);
+        zooGroup.rotation.y = -Math.PI / 12;
+      }
+      this.homeTitle.add(zooGroup);
+
+      // Zoo box
+      const doubanBoxGeo = new THREE.BoxGeometry(2.3, 0.4, 0.4);
+      const doubanBoxMat = new THREE.MeshStandardMaterial({
+        color: 0xFFBF5E,
+        roughness: 0.2,
+        transparent: true,
+        opacity: 1,
+
+      });
+      const doubanBox = new THREE.Mesh(doubanBoxGeo, doubanBoxMat);
+      const doubanGroup = new THREE.Group();
+      doubanGroup.add(doubanBox);
+
+      const doubanTextGeo = new TextGeometry('Douban', {
+        font: font,
+        size: 0.5,
+        depth: 0.05,
+        curveSegments: 12,
+      });
+      doubanTextGeo.center();
+      const doubanTextMat = new THREE.MeshStandardMaterial({
+        color: 0xEfFFAE,
+        // metalness: 0.1,
+        roughness: 0.1,
+        transparent: true,
+
+      });
+      const doubanText = new THREE.Mesh(doubanTextGeo, doubanTextMat);
+      doubanText.position.y = doubanBoxGeo.parameters.height / 2 + 0.4;
+      doubanText.position.z += 0.1;
+      doubanText.position.x -= 0.1;
+      doubanGroup.add(doubanText);
+
+      if (this.isMobile) {
+        doubanGroup.position.set(config.pageWidth / 2, 0, 0);
+        doubanGroup.rotation.x = -Math.PI / 16;
+      }
+      else {
+
+        doubanGroup.position.set(-config.pageWidth / 3, 0, 0);
+        doubanGroup.rotation.y = Math.PI / 16;
+
+      }
+      this.homeTitle.add(doubanGroup);
+
+      // 整体
+      this.homeTitle.position.x = -config.pageWidth * 0.3;
+      this.homeTitle.rotation.x = Math.PI / 2;
+      this.homeTitle.scale.set(0.8, 0.8, 0.8);
+      this.homeTitle.rotation.y = Math.PI / 2;
+      this.book.add(this.homeTitle);
     });
   }
+
+
 
   private _createDecorations(i: number, textureLoader: THREE.TextureLoader, z: number): DecorationPair[] {
     const decorations = assets.decorations[i] || [];

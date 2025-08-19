@@ -83,6 +83,7 @@ export function getPageId(index: number) {
 export const assets = {
   fonts:{
     simsun: asset('fonts/SimSun_Regular.json'),
+    solitreo: asset('fonts/Solitreo_Regular.json'),
   },
   media: [
     {},
@@ -132,7 +133,10 @@ export const assets = {
     asset('imgs/bg/xgh.png'),
   ],
   decorations: [
-    [],
+    [
+      { texture: asset('imgs/dec/cover1.png'), parallaxFactor: 0.2, offset: { x: 1.04, y: -0.09, z: 0.016 }, scale: 1.29 },
+      { texture: asset('imgs/dec/cover2.png'), parallaxFactor: 0.1, offset: { x: 1.15, y: -0.08, z: 0.015 }, scale: 1.28 },
+    ],
     [
       { texture: asset('imgs/dec/meidi1.png'), parallaxFactor: 0.2, offset: { x: 2, y: -0.1, z: 0.016 }, scale: 1.25 },
       { texture: asset('imgs/dec/meidi2.png'), parallaxFactor: 0.1, offset: { x: 0.85, y: -0.05, z: 0.015 }, scale: 1.3 },
