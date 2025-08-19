@@ -76,18 +76,8 @@ export class BookScene {
 
     this.setUpLight();
     // this.setupLightControls();
-    this.handleResize();  //FIXME: 现在这个 handleResize 不可以放在后面执行
-
 
     window.addEventListener('resize', () => this.handleResize());
-
-    this.camera.position.add(this.initialCameraOffset);
-    this.camera.up.copy(this.initialCameraUp);
-
-    this.camera.lookAt(
-      isDev() ? new THREE.Vector3(0, 0, 0) :
-        this.isMobile ? new THREE.Vector3(1.2, 0, 0) : new THREE.Vector3(0, 2, -2));
-
 
     // helper
     // const axesHelper = new THREE.AxesHelper(5);
@@ -132,10 +122,22 @@ export class BookScene {
   }
 
   public async init() {
+
     const textureLoader = new THREE.TextureLoader();
     const fontLoader = new FontLoader();
     const loadPromises = assets.pages.map((url) => new Promise((resolve) => textureLoader.load(url, resolve)));
-    await Promise.all(loadPromises);
+
+    await Promise.all(loadPromises).then(() => {
+
+      this.handleResize();
+      this.camera.position.add(this.initialCameraOffset);
+      this.camera.up.copy(this.initialCameraUp);
+
+      this.camera.lookAt(
+        isDev() ? new THREE.Vector3(0, 0, 0) :
+          this.isMobile ? new THREE.Vector3(1.2, 0, 0) : new THREE.Vector3(0, 2, -2));
+
+    });
 
     for (let i = 0;i < config.numPages;i++) {
       const page = this._createPage(i, textureLoader, fontLoader);
