@@ -1,21 +1,3 @@
-
-export function getBaseUrl() {
-  try {
-    const lang = navigator.language || '';
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-    const inCN = /^zh-CN/i.test(lang) || tz.includes('Shanghai') || tz.includes('Beijing');
-
-    return inCN
-      ? 'https://gcore.jsdelivr.net/gh/douban-zoo/douban-zoo.github.io@gh-pages/'
-      : import.meta.env.BASE_URL;
-  } catch {
-    return import.meta.env.BASE_URL;
-  }
-}
-
-
-export const asset = (path: string) => getBaseUrl() + path.replace(/^\/+/, '');
-
 export const config = {
   numPages: 6,
   pageWidth: 2.5,
@@ -81,81 +63,81 @@ export function getPageId(index: number) {
 }
 
 export const assets = {
-  fonts:{
-    simsun: asset('fonts/SimSun_Regular.json'),
-    solitreo: asset('fonts/Solitreo_Regular.json'),
+  fonts: {
+    simsun: 'fonts/SimSun_Regular.json',
+    solitreo: 'fonts/Solitreo_Regular.json',
   },
   media: [
     {},
     {
-      audio: asset('audios/meidi.mp3'),
-      video: asset('videos/meidi-eat.webm'),
+      audio: 'audios/meidi.mp3',
+      video: 'videos/meidi-eat.webm',
       photo: 17,
     },
     {
-      audio: asset('audios/jojo.m4a'),
-      video: asset('videos/jojo-play.webm'),
+      audio: 'audios/jojo.m4a',
+      video: 'videos/jojo-play.webm',
       photo: 15,
     },
     {
-      audio: asset('audios/pupu.m4a'),
-      video: asset('videos/pupu-daze.webm'),
+      audio: 'audios/pupu.m4a',
+      video: 'videos/pupu-daze.webm',
       photo: 17,
     },
     {
-      audio: asset('audios/tianchengzi.m4a'),
-      video: asset('videos/tianchengzi-eat.webm'),
+      audio: 'audios/tianchengzi.m4a',
+      video: 'videos/tianchengzi-eat.webm',
       photo: 10,
     },
     {
-      video: asset('videos/xgh.webm'),
+      video: 'videos/xgh.webm',
       photo: 20,
     },
   ],
   icons: {
-    video: asset('icons/video.png'),
-    audio: asset('icons/audio.png'),
-    photo: asset('icons/folder.png'),
+    video: 'icons/video.png',
+    audio: 'icons/audio.png',
+    photo: 'icons/folder.png',
   },
   textures: {
-    'rainbow': asset('imgs/textures/rainbow.png'),
+    'rainbow': 'imgs/textures/rainbow.png',
   },
-    normalMap: {
-    cover: asset('imgs/textures/cover-normal.png'),
-    paper: asset('imgs/textures/paper-normal.png'),
+  normalMap: {
+    cover: 'imgs/textures/cover-normal.png',
+    paper: 'imgs/textures/paper-normal.png',
   },
   pages: [
-    asset('imgs/bg/cover.png'),
-    asset('imgs/bg/meidi.png'),
-    asset('imgs/bg/jongjong.png'),
-    asset('imgs/bg/pupu.png'),
-    asset('imgs/bg/tianchengzi.png'),
-    asset('imgs/bg/xgh.png'),
+    'imgs/bg/cover.png',
+    'imgs/bg/meidi.png',
+    'imgs/bg/jongjong.png',
+    'imgs/bg/pupu.png',
+    'imgs/bg/tianchengzi.png',
+    'imgs/bg/xgh.png',
   ],
   decorations: [
     [
-      { texture: asset('imgs/dec/cover1.png'), parallaxFactor: 0.2, offset: { x: 1.04, y: -0.09, z: 0.016 }, scale: 1.29 },
-      { texture: asset('imgs/dec/cover2.png'), parallaxFactor: 0.1, offset: { x: 1.15, y: -0.08, z: 0.015 }, scale: 1.28 },
+      { texture: 'imgs/dec/cover1.png', parallaxFactor: 0.2, offset: { x: 1.04, y: -0.09, z: 0.016 }, scale: 1.29 },
+      { texture: 'imgs/dec/cover2.png', parallaxFactor: 0.1, offset: { x: 1.15, y: -0.08, z: 0.015 }, scale: 1.28 },
     ],
     [
-      { texture: asset('imgs/dec/meidi1.png'), parallaxFactor: 0.2, offset: { x: 2, y: -0.1, z: 0.016 }, scale: 1.25 },
-      { texture: asset('imgs/dec/meidi2.png'), parallaxFactor: 0.1, offset: { x: 0.85, y: -0.05, z: 0.015 }, scale: 1.3 },
+      { texture: 'imgs/dec/meidi1.png', parallaxFactor: 0.2, offset: { x: 2, y: -0.1, z: 0.016 }, scale: 1.25 },
+      { texture: 'imgs/dec/meidi2.png', parallaxFactor: 0.1, offset: { x: 0.85, y: -0.05, z: 0.015 }, scale: 1.3 },
     ],
     [
-      { texture: asset('imgs/dec/jojo1.png'), parallaxFactor: 0.35, offset: { x: 2.9, y: -0.025, z: 0.014 }, scale: 1.3 },
-      { texture: asset('imgs/dec/jojo2.png'), parallaxFactor: 0.2, offset: { x: 1.5, y: -0.15, z: 0.016 }, scale: 1.2 },
+      { texture: 'imgs/dec/jojo1.png', parallaxFactor: 0.35, offset: { x: 2.9, y: -0.025, z: 0.014 }, scale: 1.3 },
+      { texture: 'imgs/dec/jojo2.png', parallaxFactor: 0.2, offset: { x: 1.5, y: -0.15, z: 0.016 }, scale: 1.2 },
     ],
     [
-      { texture: asset('imgs/dec/pupu1.png'), parallaxFactor: 0.28, offset: { x: 2.2, y: -0.1, z: 0.014 }, scale: 1.2 },
-      { texture: asset('imgs/dec/pupu2.png'), parallaxFactor: 0.23, offset: { x: 1.5, y: 0.2, z: 0.016 }, scale: 0.92 },
+      { texture: 'imgs/dec/pupu1.png', parallaxFactor: 0.28, offset: { x: 2.2, y: -0.1, z: 0.014 }, scale: 1.2 },
+      { texture: 'imgs/dec/pupu2.png', parallaxFactor: 0.23, offset: { x: 1.5, y: 0.2, z: 0.016 }, scale: 0.92 },
     ],
     [
-      { texture: asset('imgs/dec/tianchengzi1.png'), parallaxFactor: 0.3, offset: { x: 2.8, y: -0.13, z: 0.016 }, scale: 1.21 },
-      { texture: asset('imgs/dec/tianchengzi2.png'), parallaxFactor: 0.2, offset: { x: 1.4, y: -0.5, z: 0.014 }, scale: 0.9 },
+      { texture: 'imgs/dec/tianchengzi1.png', parallaxFactor: 0.3, offset: { x: 2.8, y: -0.13, z: 0.016 }, scale: 1.21 },
+      { texture: 'imgs/dec/tianchengzi2.png', parallaxFactor: 0.2, offset: { x: 1.4, y: -0.5, z: 0.014 }, scale: 0.9 },
     ],
     [
-      { texture: asset('imgs/dec/xgh1.png'), parallaxFactor: 0.3, offset: { x: 2.85, y: -0.16, z: 0.014 }, scale: 1.52 },
-      { texture: asset('imgs/dec/xgh2.png'), parallaxFactor: 0.15, offset: { x: 1.29, y: -0.07, z: 0.016 }, scale: 1.25 },
+      { texture: 'imgs/dec/xgh1.png', parallaxFactor: 0.3, offset: { x: 2.85, y: -0.16, z: 0.014 }, scale: 1.52 },
+      { texture: 'imgs/dec/xgh2.png', parallaxFactor: 0.15, offset: { x: 1.29, y: -0.07, z: 0.016 }, scale: 1.25 },
     ],
   ],
 };

@@ -17,9 +17,6 @@ importers:
       three:
         specifier: ^0.179.1
         version: 0.179.1
-      three-fatline:
-        specifier: ^0.7.1
-        version: 0.7.1(three@0.179.1)
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^6.0.0
@@ -710,12 +707,6 @@ packages:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
 
-  three-fatline@0.7.1:
-    resolution: {integrity: sha512-V4GAeXf2FoYKcyiHFP67fJMXJ6q3WzzUP8a5F1bNEhE++9hZ4qbuhNdUnfEd8//tljEEyQ6Kv1bR7ROLbHd+mg==}
-    engines: {node: '>=12'}
-    peerDependencies:
-      three: '>=0.154.0'
-
   three@0.179.1:
     resolution: {integrity: sha512-5y/elSIQbrvKOISxpwXCR4sQqHtGiOI+MKLc3SsBdDXA2hz3Mdp3X59aUp8DyybMa34aeBwbFTpdoLJaUDEWSw==}
 
@@ -1311,10 +1302,6 @@ snapshots:
       minizlib: 3.0.2
       mkdirp: 3.0.1
       yallist: 5.0.0
-
-  three-fatline@0.7.1(three@0.179.1):
-    dependencies:
-      three: 0.179.1
 
   three@0.179.1: {}
 
