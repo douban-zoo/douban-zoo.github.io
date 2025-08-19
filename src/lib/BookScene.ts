@@ -43,8 +43,8 @@ export class BookScene {
   private normalCameraZ: number = 6;
   private closedCameraZ: number = 4;
 
-  private initialCameraOffset = isDev() ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(4, -4, -2);
-  private initialCameraUp = isDev() ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(-2, 4, 3);
+  private initialCameraOffset = isDev() ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(4, -4, 0);
+  private initialCameraUp = isDev() ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(-2, 3, 3);
 
   public openingAnimationStatus: 'none' | 'playing' | 'played' = isDev() ? 'played' : 'none';
 
@@ -102,8 +102,8 @@ export class BookScene {
 
     this.loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
       const progressRatio = itemsLoaded / itemsTotal;
-      (loadingBar as HTMLElement).style.transform = `scaleX(${progressRatio})`;
-      console.log(`Loading: ${Math.round(progressRatio * 100)}%`);
+      (loadingBar as HTMLElement).style.transform = `scaleX(${ progressRatio })`;
+      console.log(`Loading: ${ Math.round(progressRatio * 100) }%`);
     };
 
     this.loadingManager.onLoad = () => {
@@ -159,13 +159,14 @@ export class BookScene {
   }
 
   private setUpPositionAndRotation() {
-    this.handleResize();
     this.camera.position.add(this.initialCameraOffset);
     this.camera.up.copy(this.initialCameraUp);
 
+    this.handleResize();
+
     this.camera.lookAt(
       isDev() ? new THREE.Vector3(0, 0, 0) :
-        this.isMobile ? new THREE.Vector3(1.2, 0, 0) : new THREE.Vector3(0, 2, -2));
+        this.isMobile ? new THREE.Vector3(1.2, 0, 0) : new THREE.Vector3(-1, 2, -3.5));
 
   }
 
@@ -188,7 +189,7 @@ export class BookScene {
   }
 
   public render() {
-    if(!this.renderable) return;
+    if (!this.renderable) return;
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -247,29 +248,28 @@ export class BookScene {
     const pageRotations: number[] = [];
     const pProgress = progress / perSegment;
 
+    // if is first page
     if (progress > 0 && progress < perSegment) {
       this.camera.position.x = THREE.MathUtils.lerp(config.pageWidth / 2, 0, pProgress);
       if (this.isMobile) {
         this.camera.position.z = THREE.MathUtils.lerp(this.closedCameraZ, this.normalCameraZ, pProgress);
       }
-      if (this.homeTitle) {
-        this.homeTitle.children.forEach((child) => {
-          child.children.forEach((c) => {
-            if (!(c instanceof THREE.Mesh)) {
-              return
-            }
-            gsap.to(c.material, {
-              opacity: 1 - pProgress * 2, duration: 0.5,
-              onComplete: () => {
-                if (c.material.opacity <= 0) {
-                  c.visible = false;
-                }
-              }
-            })
-          });
-        })
 
-      }
+      this.homeTitle?.children.forEach((child) => {
+        child.children.forEach((c) => {
+          if (!(c instanceof THREE.Mesh)) {
+            return
+          }
+          gsap.to(c.material, {
+            opacity: 1 - pProgress * 2, duration: 0.5,
+            onComplete: () => {
+              if (c.material.opacity <= 0) {
+                c.visible = false;
+              }
+            }
+          })
+        });
+      })
     }
 
     currentPage.set(Math.round(pProgress));

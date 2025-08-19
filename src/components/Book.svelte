@@ -16,6 +16,8 @@
   let lastMoveTime = 0;
   let lastMoveX = 0;
 
+  let resizeObserver: ResizeObserver;
+
   onMount(() => {
     if (!container) return;
     bookScene = new BookScene(container);
@@ -25,15 +27,20 @@
       animation = requestAnimationFrame(animate);
       bookScene?.render();
     };
-
     bookScene.init().then(() => {
       animate();
     });
 
-    window.addEventListener('resize', handleResize);
+    resizeObserver = new ResizeObserver(() => {
+      bookScene?.handleResize();
+    });
+
+    resizeObserver.observe(container);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       cancelAnimationFrame(animation);
       bookScene?.dispose();
     };
@@ -109,7 +116,7 @@
 
 <div
   bind:this={container}
-  class="cursor-grab touch-none w-screen min-w-screen h-screen min-h-screen"
+  class="cursor-grab touch-none w-screen min-w-screen h-[100dvh] select-none"
   on:pointerdown={onPointerDown}
   on:pointermove={onPointerMove}
   on:pointerup={onPointerUp}
@@ -122,10 +129,3 @@
   aria-valuenow={globalProgress}
   tabindex="0"
 />
-
-<style>
-  div {
-    user-select: none;
-    -webkit-user-select: none;
-  }
-</style>
