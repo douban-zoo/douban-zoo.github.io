@@ -9,6 +9,8 @@ import { FontLoader } from 'three/examples/jsm/Addons.js';
 import { TextGeometry } from 'three/examples/jsm/Addons.js';
 import { PageBuilder, type DecorationPair } from './PageBuilder';
 
+THREE.Cache.enabled = true;
+
 
 export class BookScene {
   private container: HTMLDivElement;
@@ -22,8 +24,6 @@ export class BookScene {
   private ambientLight: THREE.AmbientLight = new THREE.AmbientLight(0xffffff, 1.8);
   private directionalLights: THREE.DirectionalLight[] = [];
   private homeTitle: THREE.Group | null = null;
-
-  private pageBuilder: PageBuilder;
 
   private videoOverlayManager: VideoOverlayManager;
   private iconManager: IconManager;
@@ -58,7 +58,6 @@ export class BookScene {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.maxPixelRatio));
 
     this.loadingManager = new THREE.LoadingManager();
-    this.pageBuilder = new PageBuilder(new THREE.TextureLoader(this.loadingManager));
     this.videoOverlayManager = new VideoOverlayManager(() => { }, () => { });
 
     this.iconManager = new IconManager(
@@ -101,7 +100,6 @@ export class BookScene {
     this.loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
       const progressRatio = itemsLoaded / itemsTotal;
       (loadingBar as HTMLElement).style.transform = `scaleX(${ progressRatio })`;
-      console.log(`Loading: ${ Math.round(progressRatio * 100) }%`);
     };
 
     this.loadingManager.onLoad = () => {
@@ -171,14 +169,12 @@ export class BookScene {
   public async init() {
     const textureLoader = new THREE.TextureLoader(this.loadingManager);
     const fontLoader = new FontLoader(this.loadingManager);
-
-    const loadPromises = assets.pages.map((url) => new Promise((resolve) => textureLoader.load(url, resolve)));
-    await Promise.all(loadPromises);
+    const pageBuilder = new PageBuilder(textureLoader);
 
     this._createHomeMesh(fontLoader);
 
     for (let i = 0;i < config.numPages;i++) {
-      const { page, decorations } = this.pageBuilder.createPage(i);
+      const { page, decorations } = pageBuilder.createPage(i);
       this.book.add(page);
       this.pages.push(page);
       this.decorationPairs[i] = decorations;
@@ -506,7 +502,6 @@ export class BookScene {
       }
       this.homeTitle.add(doubanGroup);
 
-      // 整体
       this.homeTitle.position.x = -config.pageWidth * 0.3;
       this.homeTitle.rotation.x = Math.PI / 2;
       this.homeTitle.scale.set(0.8, 0.8, 0.8);
