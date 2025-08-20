@@ -36,7 +36,6 @@ export class VideoOverlayManager {
   public close() {
 
     this.videoElement.pause();
-    // this.videoElement.src = '';
 
     this.overlayElement.classList.remove('opacity-100', 'pointer-events-auto');
     this.overlayElement.classList.add('opacity-0', 'pointer-events-none');

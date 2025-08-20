@@ -26,8 +26,10 @@ export class IconManager {
   private photoContainer: HTMLDivElement;
   private photos: HTMLDivElement[] = [];
 
+  private downPos = { x: 0, y: 0 };
+  private boundHandleDown: (event: PointerEvent) => void;
+  private boundHandleUp: (event: PointerEvent) => void;
 
-  private boundHandleClick: (event: MouseEvent) => void;
   private maxZIndex: number = 11;
 
   constructor (
@@ -55,9 +57,11 @@ export class IconManager {
       console.error('The #photo-overlay-container element was not found in the DOM.');
     }
 
-    this.boundHandleClick = this.handleClick.bind(this);
-    renderer.domElement.addEventListener('click', this.boundHandleClick, false);
+    this.boundHandleDown = this.handlePointerDown.bind(this);
+    this.boundHandleUp = this.handlePointerUp.bind(this);
 
+    renderer.domElement.addEventListener("pointerdown", this.boundHandleDown, false);
+    renderer.domElement.addEventListener("pointerup", this.boundHandleUp, false);
   }
 
   public init(textureLoader: THREE.TextureLoader) {
@@ -158,15 +162,14 @@ export class IconManager {
     this.prevMediaState = currMedia;
   }
 
-
-
   public onResize() {
     this.isMobile = this.container.clientWidth < 448;
     this.updatePosition();
   }
 
   public dispose() {
-    this.renderer.domElement.removeEventListener('click', this.boundHandleClick, false);
+    this.renderer.domElement.removeEventListener('pointerdown', this.boundHandleDown);
+    this.renderer.domElement.removeEventListener('pointerup', this.boundHandleUp);
 
     this.clearAllPhotos();
 
@@ -325,6 +328,20 @@ export class IconManager {
           this.showPhoto(imagePath);
         }
       }
+    }
+  }
+  private handlePointerDown(e: PointerEvent) {
+    this.downPos.x = e.clientX;
+    this.downPos.y = e.clientY;
+  }
+
+  private handlePointerUp(e: PointerEvent) {
+    const dx = e.clientX - this.downPos.x;
+    const dy = e.clientY - this.downPos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance < 5) {
+      this.handleClick(e);
     }
   }
 }

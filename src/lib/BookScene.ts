@@ -23,14 +23,13 @@ export class BookScene {
   private decorationPairs: DecorationPair[][] = [];
   private ambientLight: THREE.AmbientLight = new THREE.AmbientLight(0xffffff, 1.8);
   private directionalLights: THREE.DirectionalLight[] = [];
-  private homeTitle: THREE.Group | null = null;
+  private homeGroup: THREE.Group | null = null;
 
   private videoOverlayManager: VideoOverlayManager;
   private iconManager: IconManager;
   private loadingManager: THREE.LoadingManager;
 
   private renderable: boolean = false;
-
   private readonly perSegment = 1 / config.numPages;
 
   private lastBgUpdate = 0;
@@ -103,10 +102,9 @@ export class BookScene {
     };
 
     this.loadingManager.onLoad = () => {
-
       setTimeout(() => {
         this.renderable = true;
-      }, 300);
+      }, 500);
 
       gsap.to(loadingOverlay, {
         opacity: 0,
@@ -163,7 +161,6 @@ export class BookScene {
     this.camera.lookAt(
       isDev() ? new THREE.Vector3(0, 0, 0) :
         this.isMobile ? new THREE.Vector3(1.2, 0, 0) : new THREE.Vector3(-1, 2, -3.5));
-
   }
 
   public async init() {
@@ -212,6 +209,7 @@ export class BookScene {
     const currentUp = this.camera.up.clone();
 
     const tl = gsap.timeline({
+
       onComplete: () => {
         this.openingAnimationStatus = 'played';
       },
@@ -230,6 +228,16 @@ export class BookScene {
     tl.to(this.camera.position, { ...targetPosition }, startTime);
     tl.to(currentLookAt, { ...targetLookAt }, startTime);
     tl.to(currentUp, { ...targetUp }, startTime);
+    this.homeGroup?.children.forEach((child) => {
+      child.children.forEach((c) => {
+        if (!(c instanceof THREE.Mesh)) {
+          return;
+        }
+        if (c.name === "douban" || c.name === "zoo") {
+          tl.to(c.rotation, { x: -Math.PI / 2 }, startTime)
+        }
+      });
+    });
   }
 
   get openingAnimationPlayed() {
@@ -256,17 +264,18 @@ export class BookScene {
         this.camera.position.z = THREE.MathUtils.lerp(this.closedCameraZ, this.normalCameraZ, pProgress);
       }
 
-      this.homeTitle?.children.forEach((child) => {
+      this.homeGroup?.children.forEach((child) => {
         child.children.forEach((c) => {
           if (!(c instanceof THREE.Mesh)) {
             return
           }
+
           c.material.opacity = 1 - pProgress * 2;
           if (c.material.opacity <= 0.01) {
             c.visible = false;
           }
         });
-      })
+      });
     }
 
     currentPage.set(Math.round(pProgress));
@@ -328,7 +337,7 @@ export class BookScene {
 
     return height < width
       ? 0
-      : -0.22 * (visibleHeight - config.pageHeight);
+      : -0.23 * (visibleHeight - config.pageHeight);
   }
 
   private updateBgColor(progress: number) {
@@ -416,9 +425,8 @@ export class BookScene {
 
   private _createHomeMesh(fontLoader: FontLoader) {
     fontLoader.load(assets.fonts.solitreo, (font) => {
-      this.homeTitle = new THREE.Group();
+      this.homeGroup = new THREE.Group();
 
-      // Douban box
       const zooBoxGeo = new THREE.BoxGeometry(1.3, 0.4, 0.4);
       const zooBoxMat = new THREE.MeshStandardMaterial({
         color: 0xF9E36C,
@@ -443,28 +451,25 @@ export class BookScene {
         transparent: true,
       });
       const zooText = new THREE.Mesh(zooTextGeo, zooTextMat);
-      zooText.position.y = zooBoxGeo.parameters.height / 2 + 0.4;
+      zooText.name = "zoo";
       zooText.position.z += 0.1;
       zooGroup.add(zooText);
 
       if (this.isMobile) {
         zooGroup.position.set(config.pageWidth, 0.2, config.pageHeight * 0.8);
         zooGroup.rotation.y = -Math.PI / 2;
-
       } else {
         zooGroup.position.set(config.pageWidth * 0.5, 0, 0);
         zooGroup.rotation.y = -Math.PI / 12;
       }
-      this.homeTitle.add(zooGroup);
+      this.homeGroup.add(zooGroup);
 
-      // Zoo box
       const doubanBoxGeo = new THREE.BoxGeometry(2.3, 0.4, 0.4);
       const doubanBoxMat = new THREE.MeshStandardMaterial({
         color: 0xFFBF5E,
         roughness: 0.2,
         transparent: true,
         opacity: 1,
-
       });
       const doubanBox = new THREE.Mesh(doubanBoxGeo, doubanBoxMat);
       const doubanGroup = new THREE.Group();
@@ -479,13 +484,12 @@ export class BookScene {
       doubanTextGeo.center();
       const doubanTextMat = new THREE.MeshStandardMaterial({
         color: 0xEfFFAE,
-        // metalness: 0.1,
         roughness: 0.1,
         transparent: true,
-
       });
       const doubanText = new THREE.Mesh(doubanTextGeo, doubanTextMat);
-      doubanText.position.y = doubanBoxGeo.parameters.height / 2 + 0.4;
+      doubanText.name = "douban";
+
       doubanText.position.z += 0.1;
       doubanText.position.x -= 0.1;
       doubanGroup.add(doubanText);
@@ -493,21 +497,36 @@ export class BookScene {
       if (this.isMobile) {
         doubanGroup.position.set(config.pageWidth / 2, 0, 0);
         doubanGroup.rotation.x = -Math.PI / 16;
-      }
-      else {
-
+      } else {
         doubanGroup.position.set(-config.pageWidth / 3, 0, 0);
         doubanGroup.rotation.y = Math.PI / 16;
-
       }
-      this.homeTitle.add(doubanGroup);
+      this.homeGroup.add(doubanGroup);
 
-      this.homeTitle.position.x = -config.pageWidth * 0.3;
-      this.homeTitle.rotation.x = Math.PI / 2;
-      this.homeTitle.scale.set(0.8, 0.8, 0.8);
-      this.homeTitle.rotation.y = Math.PI / 2;
-      this.book.add(this.homeTitle);
+      this.homeGroup.position.x = -config.pageWidth * 0.3;
+      this.homeGroup.scale.set(0.8, 0.8, 0.8);
+      this.homeGroup.rotation.set(Math.PI / 2, Math.PI / 2, 0);
+
+      this.book.add(this.homeGroup);
+
+      const dropHeight = 10;
+      const textTargetY = (boxGeo: THREE.BoxGeometry) => boxGeo.parameters.height / 2 + 0.4;
+
+      // Initial positions
+      zooBox.position.y = dropHeight;
+      doubanBox.position.y = dropHeight;
+      zooText.position.y = dropHeight + textTargetY(zooBoxGeo);
+      doubanText.position.y = dropHeight + textTargetY(doubanBoxGeo);
+
+      const tl = gsap.timeline({
+        defaults: { duration: 1, ease: 'bounce.out' }
+      });
+
+      tl.to(zooBox.position, { y: 0 }, 0);
+      tl.to(doubanBox.position, { y: 0 }, 0.3);
+
+      tl.to(zooText.position, { y: textTargetY(zooBoxGeo) }, 1.2);
+      tl.to(doubanText.position, { y: textTargetY(doubanBoxGeo) }, 1.4);
     });
   }
-
 }
