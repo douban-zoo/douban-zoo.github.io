@@ -102,17 +102,20 @@ export class BookScene {
 
     this.loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
       const progressRatio = itemsLoaded / itemsTotal;
-      (loadingBar as HTMLElement).style.transform = `scaleX(${ progressRatio })`;
+      (loadingBar as HTMLElement).style.width = `${ progressRatio * 100 }%`;
     };
 
     this.loadingManager.onLoad = () => {
+      (loadingBar as HTMLElement).classList.add("done");
+
       setTimeout(() => {
         this.renderable = true;
       }, 200);
 
       gsap.to(loadingOverlay, {
         opacity: 0,
-        duration: 1,
+        duration: 0.3,
+        delay: 0.3,
         onComplete: () => {
           loadingOverlay.style.visibility = 'hidden';
         }

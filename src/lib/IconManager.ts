@@ -324,7 +324,7 @@ export class IconManager {
         const photoCount = assets.media[get(currentPage)]?.photo || 0;
         if (photoCount > 0) {
           const randomIndex = Math.floor(Math.random() * photoCount) + 1;
-          const imagePath = `/imgs/${ this.pageId }/${ randomIndex }.png`;
+          const imagePath = `imgs/${ this.pageId }/${ randomIndex }.png`;
           this.showPhoto(imagePath);
         }
       }
