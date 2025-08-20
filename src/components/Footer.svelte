@@ -7,7 +7,7 @@
 
 {#if visible}
   <div
-    class="fixed bottom-1 px-2 md:px-5 w-full flex font-serif items-center justify-between text-white/50"
+    class="fixed bottom-1 px-2 md:px-5 w-full flex font-serif items-center justify-between text-white/50 z-[11]"
     transition:fade={{duration: 200}}
   >
     <div class="flex items-center text-sm gap-1 md:gap-2">
@@ -19,7 +19,7 @@
       >
     </div>
 
-    <div class="text-xs text-center whitespace-pre-line hidden md:block max-w-md mb-[2px]">
+    <div class="text-[0.65rem] leading-3 text-center whitespace-pre-line hidden md:block max-w-md mb-[2px]">
       If you are a ( former ) Douban employee and would like your pet
       to be featured on the site, please reach out to <a
         href="mailto:anigiscur@gmail.com">Yanxin</a

@@ -22,7 +22,7 @@
     </button>
 
     <video
-      class="w-[80%] lg:w-[60%] mt-2 h-auto block mx-auto rounded-xl"
+      class="w-[80%] md:w-[60%] mt-2 h-auto block mx-auto rounded-xl max-h-[90vh]"
       playsinline
       loop
       autoplay

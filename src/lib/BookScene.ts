@@ -46,6 +46,7 @@ export class BookScene {
   private raycaster: THREE.Raycaster = new THREE.Raycaster();
   private mouse: THREE.Vector2 = new THREE.Vector2();
   private isFluttering: boolean = false;
+  private isHoveringCover = false;
 
   constructor (container: HTMLDivElement) {
     this.container = container;
@@ -77,10 +78,10 @@ export class BookScene {
     this.renderer.setClearColor(palette.bg[0]);
     this.container.appendChild(this.renderer.domElement);
 
-    this.setUpLight();
+    this.setupLight();
     // this.setupLightControls();
     this.setupLoadingManager();
-    this.setUpPositionAndRotation();
+    this.setupPositionAndRotation();
     this.setupHoverInteraction();
 
     window.addEventListener('resize', () => this.handleResize());
@@ -94,6 +95,7 @@ export class BookScene {
   private setupLoadingManager() {
     const loadingOverlay = document.getElementById('loading-overlay');
     const loadingBar = document.getElementById('loading-bar');
+    const dog = loadingBar.firstChild;
 
     if (!loadingOverlay || !loadingBar) {
       console.error('Loading screen elements not found in the DOM.');
@@ -106,7 +108,7 @@ export class BookScene {
     };
 
     this.loadingManager.onLoad = () => {
-      (loadingBar as HTMLElement).classList.add("done");
+      (dog as HTMLElement).classList.add("done");
 
       setTimeout(() => {
         this.renderable = true;
@@ -123,7 +125,7 @@ export class BookScene {
     };
   }
 
-  private setUpLight() {
+  private setupLight() {
     this.scene.add(this.ambientLight);
 
     const rLight = new THREE.DirectionalLight(0xffffff, 0.6);
@@ -163,6 +165,7 @@ export class BookScene {
     this.renderer.domElement.addEventListener('mousemove', this._onMouseMove.bind(this), false);
   }
 
+
   private _onMouseMove(event: MouseEvent) {
     if (this.openingAnimationStatus !== 'none' || this.isFluttering || this.isMobile) {
       return;
@@ -178,7 +181,12 @@ export class BookScene {
     const intersects = this.raycaster.intersectObject(cover, true);
 
     if (intersects.length > 0) {
-      this._playFlutterAnimation();
+      if (!this.isHoveringCover) {
+        this._playFlutterAnimation();
+        this.isHoveringCover = true;
+      }
+    } else {
+      this.isHoveringCover = false;
     }
   }
 
@@ -207,7 +215,7 @@ export class BookScene {
   }
 
 
-  private setUpPositionAndRotation() {
+  private setupPositionAndRotation() {
     this.camera.position.add(this.initialCameraOffset);
     this.camera.up.copy(this.initialCameraUp);
 
@@ -514,8 +522,8 @@ export class BookScene {
         zooGroup.position.set(config.pageWidth, 0.2, config.pageHeight * 0.8);
         zooGroup.rotation.y = -Math.PI / 2;
       } else {
-        zooGroup.position.set(config.pageWidth * 0.5, 0, 0);
-        zooGroup.rotation.y = -Math.PI / 12;
+        zooGroup.position.set(config.pageWidth * 0.6, 0, 0);
+        zooGroup.rotation.y = -Math.PI / 6;
       }
       this.homeGroup.add(zooGroup);
 
@@ -553,7 +561,7 @@ export class BookScene {
         doubanGroup.position.set(config.pageWidth / 2, 0, 0);
         doubanGroup.rotation.x = -Math.PI / 16;
       } else {
-        doubanGroup.position.set(-config.pageWidth / 3, 0, 0);
+        doubanGroup.position.set(-config.pageWidth / 4, 0, 0);
         doubanGroup.rotation.y = Math.PI / 16;
       }
       this.homeGroup.add(doubanGroup);
@@ -564,7 +572,7 @@ export class BookScene {
 
       this.book.add(this.homeGroup);
 
-      const dropHeight = 10;
+      const dropHeight = 6;
       const textTargetY = (boxGeo: THREE.BoxGeometry) => boxGeo.parameters.height / 2 + 0.4;
 
       // Initial positions
@@ -574,14 +582,14 @@ export class BookScene {
       doubanText.position.y = dropHeight + textTargetY(doubanBoxGeo);
 
       const tl = gsap.timeline({
-        defaults: { duration: 1, ease: 'bounce.out' }
+        defaults: { duration: 1.2, ease: 'bounce.out' }
       });
 
       tl.to(zooBox.position, { y: 0 }, 0);
-      tl.to(doubanBox.position, { y: 0 }, 0.3);
+      tl.to(doubanBox.position, { y: 0 }, 0.2);
 
-      tl.to(zooText.position, { y: textTargetY(zooBoxGeo) }, 1.2);
-      tl.to(doubanText.position, { y: textTargetY(doubanBoxGeo) }, 1.4);
+      tl.to(zooText.position, { y: textTargetY(zooBoxGeo) }, 1);
+      tl.to(doubanText.position, { y: textTargetY(doubanBoxGeo) }, 1.2);
     });
   }
 }
