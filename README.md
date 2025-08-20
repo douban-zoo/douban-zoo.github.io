@@ -1,3 +1,7 @@
 # douban-zoo.github.io
 
-uh !
+
+
+
+Inspired by [HTWKR](https://howtotalktowhitekidsaboutracism.com)
+

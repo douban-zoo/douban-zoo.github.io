@@ -43,6 +43,9 @@ export class BookScene {
   private initialCameraUp = isDev() ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(-2, 3, 3);
 
   public openingAnimationStatus: 'none' | 'playing' | 'played' = isDev() ? 'played' : 'none';
+  private raycaster: THREE.Raycaster = new THREE.Raycaster();
+  private mouse: THREE.Vector2 = new THREE.Vector2();
+  private isFluttering: boolean = false;
 
   constructor (container: HTMLDivElement) {
     this.container = container;
@@ -78,6 +81,7 @@ export class BookScene {
     // this.setupLightControls();
     this.setupLoadingManager();
     this.setUpPositionAndRotation();
+    this.setupHoverInteraction();
 
     window.addEventListener('resize', () => this.handleResize());
 
@@ -104,7 +108,7 @@ export class BookScene {
     this.loadingManager.onLoad = () => {
       setTimeout(() => {
         this.renderable = true;
-      }, 500);
+      }, 200);
 
       gsap.to(loadingOverlay, {
         opacity: 0,
@@ -151,6 +155,54 @@ export class BookScene {
       });
     });
   }
+
+  private setupHoverInteraction() {
+    this.renderer.domElement.addEventListener('mousemove', this._onMouseMove.bind(this), false);
+  }
+
+  private _onMouseMove(event: MouseEvent) {
+    if (this.openingAnimationStatus !== 'none' || this.isFluttering || this.isMobile) {
+      return;
+    }
+
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+
+    const cover = this.pages[0];
+    const intersects = this.raycaster.intersectObject(cover, true);
+
+    if (intersects.length > 0) {
+      this._playFlutterAnimation();
+    }
+  }
+
+  private _playFlutterAnimation() {
+    if (this.isFluttering) return;
+    this.isFluttering = true;
+
+    const cover = this.pages[0];
+    const originY = cover.rotation.y;
+
+    gsap.timeline({
+      onComplete: () => {
+        this.isFluttering = false;
+        cover.rotation.y = originY;
+      }
+    })
+      .to(cover.rotation, {
+        keyframes: [
+          { y: originY - 0.25, duration: 0.1, ease: "power2.out" },
+          { y: originY - 0.1, duration: 0.1, ease: "power2.out" },
+          { y: originY - 0.2, duration: 0.1, ease: "power2.out" },
+          { y: originY - 0.05, duration: 0.15, ease: "power2.out" },
+          { y: originY, duration: 0.3, ease: "power1.out" }
+        ]
+      });
+  }
+
 
   private setUpPositionAndRotation() {
     this.camera.position.add(this.initialCameraOffset);

@@ -51,9 +51,6 @@
     bookScene?.update(progress);
   }
 
-  function handleResize() {
-    bookScene?.handleResize();
-  }
 
   function onPointerDown(event: PointerEvent) {
     if (!bookScene?.openingAnimationPlayed) {
