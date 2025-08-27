@@ -8,7 +8,7 @@
       class="relative h-full w-0 bg-[#ffe65a] transition-[width] duration-200 ease-in-out rounded-[4px]"
     >
       <img
-        src="/imgs/meidi.png"
+        src="imgs/meidi.png"
         class="absolute -top-14 -right-3  md:-top-18 md:-right-5 w-12 h-12 md:w-15 md:h-15"
       />
     </div>
